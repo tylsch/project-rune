@@ -39,7 +39,7 @@ object AkkaAppDependencies {
         Test / testOptions += Tests.Argument("-oDF"),
         Test / logBuffered := false,
         run / fork := true,
-        run / javacOptions ++= sys.props
+        run / javaOptions ++= sys.props
           .get("config.resource")
           .fold(Seq.empty[String])(res => Seq(s"-Dconfig.resource=$res")),
         Global / cancelable := false,
