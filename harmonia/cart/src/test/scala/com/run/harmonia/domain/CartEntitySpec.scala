@@ -1,6 +1,7 @@
 package com.run.harmonia.domain
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import akka.pattern.StatusReply
 import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
 import com.rune.harmonia.domain.CartEntity
 import com.typesafe.config.ConfigFactory
@@ -27,7 +28,7 @@ class CartEntitySpec
     EventSourcedBehaviorTestKit[
       CartEntity.Command,
       CartEntity.Event,
-      CartEntity.State](system, CartEntity(cartId))
+      CartEntity.CartState](system, CartEntity(cartId))
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -36,7 +37,17 @@ class CartEntitySpec
 
   "The Cart" should {
     "add item" in {
-      fail("NOT implemented")
+      var result = eventSourcedTestKit.runCommand[StatusReply[CartEntity.Summary]](
+        replyTo => CartEntity.AddItem("foo", 42, replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Success(
+          CartEntity.Summary(Map("foo" -> 42))
+        )
+      )
+
+      result.event should ===(CartEntity.ItemAdded(cartId, "foo", 42))
     }
   }
 
