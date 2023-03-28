@@ -3,7 +3,7 @@ package com.run.harmonia.domain
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.pattern.StatusReply
 import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
-import com.rune.harmonia.domain.CartEntity
+import com.rune.harmonia.domain.{CartEntity, CartCommands, CartEvents, CartReplies, CartState}
 import com.typesafe.config.ConfigFactory
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -26,9 +26,9 @@ class CartEntitySpec
   private val cartId = "testCart"
   private val eventSourcedTestKit =
     EventSourcedBehaviorTestKit[
-      CartEntity.Command,
-      CartEntity.Event,
-      CartEntity.CartState](system, CartEntity(cartId))
+      CartCommands.Command,
+      CartEvents.Event,
+      CartState.State](system, CartEntity(cartId))
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -37,17 +37,17 @@ class CartEntitySpec
 
   "The Cart" should {
     "add item" in {
-      var result = eventSourcedTestKit.runCommand[StatusReply[CartEntity.Summary]](
-        replyTo => CartEntity.AddItem("foo", 42, replyTo)
+      var result = eventSourcedTestKit.runCommand[StatusReply[CartReplies.Summary]](
+        replyTo => CartCommands.AddItem("foo", 42, replyTo)
       )
 
       result.reply should ===(
         StatusReply.Success(
-          CartEntity.Summary(Map("foo" -> 42))
+          CartReplies.Summary(Map("foo" -> 42), false)
         )
       )
 
-      result.event should ===(CartEntity.ItemAdded(cartId, "foo", 42))
+      result.event should ===(CartEvents.ItemAdded(cartId, "foo", 42))
     }
   }
 

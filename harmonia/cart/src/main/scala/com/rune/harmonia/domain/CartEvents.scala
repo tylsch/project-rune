@@ -1,6 +1,6 @@
 package com.rune.harmonia.domain
 
-object Events {
+object CartEvents {
   sealed trait Event extends CborSerializable {
     def cartId: String
   }
