@@ -17,12 +17,12 @@ object CartEntity {
     ClusterSharding(system).init(Entity(EntityKey)(entityContext => CartEntity(entityContext.entityId)))
   }
 
-  def apply(id: String): Behavior[Command] = {
+  def apply(cartId: String): Behavior[Command] = {
     EventSourcedBehavior[Command, Event, Option[State]](
-      persistenceId = PersistenceId(EntityKey.name, id),
+      persistenceId = PersistenceId(EntityKey.name, cartId),
       emptyState = None,
-      commandHandler = (state, cmd) => throw new NotImplementedError("TODO: process the command & return an Effect"),
-      eventHandler = (state, evt) => throw new NotImplementedError("TODO: process the event return the next state")
+      commandHandler = (state, cmd) => handleCommand(cartId, state, cmd),
+      eventHandler = (state, evt) => handleEvent(state, evt)
     )
   }
 }
