@@ -11,6 +11,7 @@ import com.rune.harmonia.domain.entities.Cart._
 object Commands {
   sealed trait Command extends CborSerializable
   final case class CreateCart(variantId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
+  final case class AddLineItem(variantId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
     state match {
@@ -29,7 +30,10 @@ object Commands {
                   case openCart: Option[OpenCart] =>
                     StatusReply.Success(Summary(openCart.get.items, openCart.get.checkoutDate.isDefined))
                 }
-          case _ => Effect.unhandled.thenNoReply()
+          case AddLineItem(_, _, replyTo) =>
+            Effect
+              .reply(replyTo)(StatusReply.Error("Command not support in current state"))
+
         }
     }
   }

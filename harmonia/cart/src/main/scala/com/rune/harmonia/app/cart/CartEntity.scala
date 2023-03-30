@@ -18,11 +18,12 @@ object CartEntity {
   }
 
   def apply(cartId: String): Behavior[Command] = {
-    EventSourcedBehavior[Command, Event, Option[State]](
-      persistenceId = PersistenceId(EntityKey.name, cartId),
-      emptyState = None,
-      commandHandler = (state, cmd) => handleCommand(cartId, state, cmd),
-      eventHandler = (state, evt) => handleEvent(state, evt)
-    )
+    EventSourcedBehavior
+      .withEnforcedReplies[Command, Event, Option[State]](
+        persistenceId = PersistenceId(EntityKey.name, cartId),
+        emptyState = None,
+        commandHandler = (state, cmd) => handleCommand(cartId, state, cmd),
+        eventHandler = (state, evt) => handleEvent(state, evt)
+      )
   }
 }
