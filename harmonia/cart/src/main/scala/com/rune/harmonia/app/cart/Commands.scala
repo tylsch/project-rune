@@ -15,26 +15,29 @@ object Commands {
 
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
     state match {
-      case None =>
-        cmd match {
-          case CreateCart(variantId, quantity, replyTo) =>
-            if (quantity <= 0)
-              Effect
-                .reply(replyTo)(
-                  StatusReply.Error("Quantity must be greater than zero")
-                )
-            else
-              Effect
-                .persist(CartCreated(cartId, variantId, quantity))
-                .thenReply(replyTo) {
-                  case openCart: Option[OpenCart] =>
-                    StatusReply.Success(Summary(openCart.get.items, openCart.get.checkoutDate.isDefined))
-                }
-          case AddLineItem(_, _, replyTo) =>
-            Effect
-              .reply(replyTo)(StatusReply.Error("Command not supported in current state"))
+      case None => handleInitialCommand(cartId, cmd)
+    }
+  }
 
-        }
+  private def handleInitialCommand(cartId: String, cmd: Command): ReplyEffect[Event, Option[State]] = {
+    cmd match {
+      case CreateCart(variantId, quantity, replyTo) =>
+        if (quantity <= 0)
+          Effect
+            .reply(replyTo)(
+              StatusReply.Error("Quantity must be greater than zero")
+            )
+        else
+          Effect
+            .persist(CartCreated(cartId, variantId, quantity))
+            .thenReply(replyTo) {
+              case openCart: Option[OpenCart] =>
+                StatusReply.Success(Summary(openCart.get.items, openCart.get.checkoutDate.isDefined))
+            }
+      case AddLineItem(_, _, replyTo) =>
+        Effect
+          .reply(replyTo)(StatusReply.Error("Command not supported in current state"))
+
     }
   }
 }
