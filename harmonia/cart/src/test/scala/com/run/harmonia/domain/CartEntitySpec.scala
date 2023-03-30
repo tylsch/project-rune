@@ -71,7 +71,7 @@ class CartEntitySpec
       )
 
       result.reply should ===(
-        StatusReply.Error("Command not support in current state")
+        StatusReply.Error("Command not supported in current state")
       )
     }
   }

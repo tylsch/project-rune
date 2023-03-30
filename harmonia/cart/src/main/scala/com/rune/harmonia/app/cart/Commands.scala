@@ -32,7 +32,7 @@ object Commands {
                 }
           case AddLineItem(_, _, replyTo) =>
             Effect
-              .reply(replyTo)(StatusReply.Error("Command not support in current state"))
+              .reply(replyTo)(StatusReply.Error("Command not supported in current state"))
 
         }
     }
