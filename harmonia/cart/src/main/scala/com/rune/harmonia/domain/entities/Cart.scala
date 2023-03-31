@@ -9,10 +9,14 @@ object Cart {
   }
 
   final case class OpenCart(items: Map[String, Int], checkoutDate: Option[Instant]) extends State {
-    def updateItem(itemId: String, quantity: Int): State = {
+
+    def hasItem(variantId: String): Boolean =
+      items.contains(variantId)
+
+    def updateItem(variantId: String, quantity: Int): State = {
       quantity match {
-        case 0 => copy(items = items - itemId)
-        case _ => copy(items = items + (itemId -> quantity))
+        case 0 => copy(items = items - variantId)
+        case _ => copy(items = items + (variantId -> quantity))
       }
     }
   }

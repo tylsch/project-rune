@@ -16,8 +16,12 @@ object Commands {
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
     state match {
       case None => handleInitialCommand(cartId, cmd)
+      case Some(openCart: OpenCart) => handleOpenCartCommand(cartId, openCart, cmd)
     }
   }
+
+  private def unSupportedCommandReply(replyTo: ActorRef[StatusReply[Summary]]): ReplyEffect[Event, Option[State]] =
+    Effect.reply(replyTo)(StatusReply.Error("Command not supported in current state"))
 
   private def handleInitialCommand(cartId: String, cmd: Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
@@ -35,9 +39,33 @@ object Commands {
                 StatusReply.Success(Summary(openCart.get.items, openCart.get.checkoutDate.isDefined))
             }
       case AddLineItem(_, _, replyTo) =>
-        Effect
-          .reply(replyTo)(StatusReply.Error("Command not supported in current state"))
+        unSupportedCommandReply(replyTo)
 
+    }
+  }
+
+  private def handleOpenCartCommand(cartId: String, state: OpenCart, cmd:Command): ReplyEffect[Event, Option[State]] = {
+    cmd match {
+      case CreateCart(_, _, replyTo) =>
+        unSupportedCommandReply(replyTo)
+      case AddLineItem(variantId, quantity, replyTo) =>
+        if (state.hasItem(variantId))
+          Effect
+            .reply(replyTo)(
+              StatusReply.Error(s"Item \"$variantId\" was already added to this shopping cart")
+            )
+        else if (quantity <= 0)
+          Effect
+            .reply(replyTo)(
+              StatusReply.Error("Quantity must be greater than zero")
+            )
+        else
+          Effect
+            .persist(LineItemAdded(cartId, variantId, quantity))
+            .thenReply(replyTo) {
+              case openCart: Option[OpenCart] =>
+                StatusReply.Success(Summary(openCart.get.items, openCart.get.checkoutDate.isDefined))
+            }
     }
   }
 }
