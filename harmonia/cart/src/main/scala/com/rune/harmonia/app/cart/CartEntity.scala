@@ -1,9 +1,12 @@
 package com.rune.harmonia.app.cart
 
-import akka.actor.typed.{ActorSystem, Behavior}
+import akka.actor.typed.{ActorSystem, Behavior, SupervisorStrategy}
 import akka.cluster.sharding.typed.scaladsl.{ClusterSharding, Entity, EntityTypeKey}
 import akka.persistence.typed.PersistenceId
-import akka.persistence.typed.scaladsl.EventSourcedBehavior
+import akka.persistence.typed.scaladsl.{EventSourcedBehavior, RetentionCriteria}
+
+import scala.concurrent.duration._
+
 
 
 object CartEntity {
@@ -25,5 +28,7 @@ object CartEntity {
         commandHandler = (state, cmd) => handleCommand(cartId, state, cmd),
         eventHandler = (state, evt) => handleEvent(state, evt)
       )
+      .withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = 100, keepNSnapshots = 3))
+      .onPersistFailure(SupervisorStrategy.restartWithBackoff(minBackoff = 10.millis, maxBackoff = 5.seconds, randomFactor = 0.1))
   }
 }
