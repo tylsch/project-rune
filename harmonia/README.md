@@ -42,11 +42,6 @@ docker exec -i {TBD} psql -U harmonia-admin harmonia -t < ddl-scripts/create_tab
     ```
 
 ## TODO Items
-1. Finish project setup for Cart Service
-2. Implement Shopping Cart Tutorial
-    2. Use Route DSL of Akka HTTP
-    2. Replace ScalalikeJdbc with Slick for read-side repository
-2. Implement Security Directives (OAuth2) (To be used with Krackend API Key or Keycloak)
-3. Implement STTP APISpec/Tapir (Open API specification)
-4. Implement Sangria (GraphQL)
-5. Implement gRPC Project Handler (Akka gRPC Project Example)
+1. Model cart domain application around Medusa.js
+2. Update exchange class to publishLocal to take advantage of Loading proto files from artifacts: https://doc.akka.io/docs/akka-grpc/current/buildtools/sbt.html
+3. Complete Medusa.js checkout processing using zio-temporal & Temporal
