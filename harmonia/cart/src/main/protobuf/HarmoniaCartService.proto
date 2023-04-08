@@ -13,7 +13,6 @@ message AddLineItemRequest {
   string cartId = 1;
   string variantId = 2;
   int32 quantity = 3;
-  int32 test = 4;
 }
 
 message Cart {
