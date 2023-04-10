@@ -44,6 +44,7 @@ object AkkaAppDependencies {
           .fold(Seq.empty[String])(res => Seq(s"-Dconfig.resource=$res")),
         Global / cancelable := false,
         libraryDependencies ++= Seq(
+          "com.rune.harmonia" %% "harmonia-exchange" % "0.1.0-SNAPSHOT" % "protobuf-src",
           // 1. Basic dependencies for a clustered application
           "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
           "com.typesafe.akka" %% "akka-cluster-typed" % AkkaVersion,

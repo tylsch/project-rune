@@ -21,6 +21,12 @@ Create the PostgresSQL tables from the SQL script located inside the ddl-scripts
 docker exec -i {TBD} psql -U harmonia-admin harmonia -t < ddl-scripts/create_tables.sql
 ```
 
+### Publish Exchange Library to "Local" Ivy Repository
+Execute the following command to compile and publish exchange module (contains all .proto files)
+```shell
+sbt exchange/publishLocal
+```
+
 ### Running Application(s)
 
 1. Start a first node:

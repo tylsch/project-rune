@@ -16,4 +16,3 @@ lazy val exchange = (project in file("exchange"))
 
 lazy val cart =
   appModule("harmonia-cart", "cart")
-    .dependsOn(exchange)
