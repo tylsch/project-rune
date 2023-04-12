@@ -11,7 +11,7 @@ service HarmoniaCartService {
 
 message AddItemRequest {
   string cartId = 1;
-  string itemId = 2;
+  string variantId = 2;
   int32 quantity = 3;
 }
 
@@ -20,6 +20,6 @@ message Cart {
 }
 
 message Item {
-  string itemId = 1;
+  string variantId = 1;
   int32 quantity = 2;
 }
