@@ -45,7 +45,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary(Map("foo" -> 42), false)
+          Replies.Summary(Map("foo" -> 42), None, false)
         )
       )
 
@@ -56,7 +56,24 @@ class CartEntitySpec
       result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> 42)
     }
 
-    // TODO: Create test for CreateCart command with metadata for line item
+    "attach metadata to item when included" in {
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CreateCart("foo", 42, Some(Map("K1" -> "V1")), replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Success(
+          Replies.Summary(Map("foo" -> 42), Some(Map("foo" -> Map("K1" -> "V1"))), false)
+        )
+      )
+
+      result.event should ===(Events.CartCreated(cartId, "foo", 42, Some(Map("K1" -> "V1"))))
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> 42)
+      result.stateOfType[Option[OpenCart]].get.metadata shouldBe Some(Map("foo" -> Map("K1" -> "V1")))
+    }
 
     "reply with an error if quantity is less than or equal to zero" in {
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
@@ -94,7 +111,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary(Map("foo" -> 42, "bar" -> 35), false)
+          Replies.Summary(Map("foo" -> 42, "bar" -> 35), None, false)
         )
       )
 

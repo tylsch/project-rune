@@ -5,7 +5,7 @@ import com.rune.harmonia.domain.CborSerializable
 import java.time.Instant
 
 object Cart {
-  type CartMetadata = Option[Map[String, Map[String, String]]]
+  private type CartMetadata = Option[Map[String, Map[String, String]]]
 
   sealed trait State extends CborSerializable {
   }

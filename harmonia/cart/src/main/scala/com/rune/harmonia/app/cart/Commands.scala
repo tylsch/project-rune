@@ -36,7 +36,7 @@ object Commands {
             .persist(CartCreated(cartId, variantId, quantity, metadata))
             .thenReply(replyTo) {
               case openCart: Option[OpenCart] =>
-                StatusReply.Success(Summary(openCart.get.items, openCart.get.checkoutDate.isDefined))
+                StatusReply.Success(Summary(openCart.get.items, openCart.get.metadata, openCart.get.checkoutDate.isDefined))
             }
       case AddLineItem(_, _, replyTo) =>
         unSupportedCommandReply(replyTo)
@@ -64,7 +64,7 @@ object Commands {
             .persist(LineItemAdded(cartId, variantId, quantity))
             .thenReply(replyTo) {
               case openCart: Option[OpenCart] =>
-                StatusReply.Success(Summary(openCart.get.items, openCart.get.checkoutDate.isDefined))
+                StatusReply.Success(Summary(openCart.get.items, None, openCart.get.checkoutDate.isDefined))
             }
     }
   }
