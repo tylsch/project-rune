@@ -2,6 +2,7 @@ package com.rune.harmonia.app.cart
 
 import com.rune.harmonia.domain.CborSerializable
 import com.rune.harmonia.domain.entities.Cart._
+import com.rune.harmonia.domain.entities.LineItem
 
 import java.time.Instant
 
@@ -18,8 +19,8 @@ object Events {
     state match {
       case None =>
         evt match {
-          case CartCreated(_, variantId, quantity, None) => Some(OpenCart(Map(variantId -> quantity), None, None))
-          case CartCreated(_, variantId, quantity, Some(metadata)) => Some(OpenCart(Map(variantId -> quantity), Some(Map(variantId -> metadata)), None))
+          case CartCreated(_, variantId, quantity, None) => Some(OpenCart(Map(variantId -> LineItem(quantity, None)), None, None))
+          case CartCreated(_, variantId, quantity, Some(metadata)) => Some(OpenCart(Map(variantId -> LineItem(quantity, None)), Some(metadata), None))
           case _ => throw new IllegalStateException(s"Invalid event [$evt] in state [NonExistingCart]")
         }
 

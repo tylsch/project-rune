@@ -10,6 +10,7 @@ import com.rune.harmonia.domain.entities.Cart._
 
 object Commands {
   sealed trait Command extends CborSerializable
+  // TODO: Refactor CreateCart command to match Medusa Create a Cart: https://docs.medusajs.com/api/store#tag/Carts/operation/PostCart
   final case class CreateCart(variantId: String, quantity: Int, metadata: Option[Map[String, String]], replyTo: ActorRef[StatusReply[Summary]]) extends Command
   final case class AddLineItem(variantId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 

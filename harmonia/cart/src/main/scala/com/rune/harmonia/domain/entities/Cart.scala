@@ -5,12 +5,12 @@ import com.rune.harmonia.domain.CborSerializable
 import java.time.Instant
 
 object Cart {
-  private type CartMetadata = Option[Map[String, Map[String, String]]]
+  private type CartMetadata = Option[Map[String, String]]
 
   sealed trait State extends CborSerializable {
   }
 
-  final case class OpenCart(items: Map[String, Int], metadata: CartMetadata, checkoutDate: Option[Instant]) extends State {
+  final case class OpenCart(items: Map[String, LineItem], metadata: CartMetadata, checkoutDate: Option[Instant]) extends State {
 
     def hasItem(variantId: String): Boolean =
       items.contains(variantId)
@@ -18,7 +18,7 @@ object Cart {
     def updateItem(variantId: String, quantity: Int): State = {
       quantity match {
         case 0 => copy(items = items - variantId)
-        case _ => copy(items = items + (variantId -> quantity))
+        case _ => copy(items = items + (variantId -> LineItem(quantity, None)))
       }
     }
   }

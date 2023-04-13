@@ -4,7 +4,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import akka.pattern.StatusReply
 import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
 import com.rune.harmonia.app.cart._
-import com.rune.harmonia.domain.entities.Cart
+import com.rune.harmonia.domain.entities.{Cart, LineItem}
 import com.rune.harmonia.domain.entities.Cart.OpenCart
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterEach
@@ -45,7 +45,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary(Map("foo" -> 42), None, checkedOut = false)
+          Replies.Summary(Map("foo" -> LineItem(42, None)), None, checkedOut = false)
         )
       )
 
@@ -53,7 +53,7 @@ class CartEntitySpec
 
       result.stateOfType[Option[OpenCart]].isDefined shouldBe true
       result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
-      result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> 42)
+      result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> LineItem(42, None))
     }
 
     "attach metadata to item when included" in {
@@ -63,7 +63,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary(Map("foo" -> 42), Some(Map("foo" -> Map("K1" -> "V1"))), checkedOut = false)
+          Replies.Summary(Map("foo" -> LineItem(42, None)), Some(Map("K1" -> "V1")), checkedOut = false)
         )
       )
 
@@ -71,8 +71,8 @@ class CartEntitySpec
 
       result.stateOfType[Option[OpenCart]].isDefined shouldBe true
       result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
-      result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> 42)
-      result.stateOfType[Option[OpenCart]].get.metadata shouldBe Some(Map("foo" -> Map("K1" -> "V1")))
+      result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> LineItem(42, None))
+      result.stateOfType[Option[OpenCart]].get.metadata shouldBe Some(Map("K1" -> "V1"))
     }
 
     "reply with an error if quantity is less than or equal to zero" in {
@@ -111,7 +111,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary(Map("foo" -> 42, "bar" -> 35), None, checkedOut = false)
+          Replies.Summary(Map("foo" -> LineItem(42, None), "bar" -> LineItem(35, None)), None, checkedOut = false)
         )
       )
 
@@ -119,9 +119,11 @@ class CartEntitySpec
 
       result.stateOfType[Option[OpenCart]].isDefined shouldBe true
       result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
-      result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> 42, "bar" -> 35)
+      result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> LineItem(42, None), "bar" -> LineItem(35, None))
     }
 
+    // TODO: Refactor, if item already exists then it should just increase the quantity that was passed in, not error.
+    //  If supplied metadata will apply new key/value and overwrite value for existing keys
     "reply with error when adding item to cart that already exists" in {
       eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, None, _))
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
