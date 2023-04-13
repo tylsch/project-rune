@@ -10,7 +10,7 @@ import com.rune.harmonia.domain.entities.Cart._
 
 object Commands {
   sealed trait Command extends CborSerializable
-  final case class CreateCart(variantId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
+  final case class CreateCart(variantId: String, quantity: Int, metadata: Option[Map[String, String]], replyTo: ActorRef[StatusReply[Summary]]) extends Command
   final case class AddLineItem(variantId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
@@ -25,7 +25,7 @@ object Commands {
 
   private def handleInitialCommand(cartId: String, cmd: Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
-      case CreateCart(variantId, quantity, replyTo) =>
+      case CreateCart(variantId, quantity, metadata, replyTo) =>
         if (quantity <= 0)
           Effect
             .reply(replyTo)(
@@ -33,7 +33,7 @@ object Commands {
             )
         else
           Effect
-            .persist(CartCreated(cartId, variantId, quantity))
+            .persist(CartCreated(cartId, variantId, quantity, metadata))
             .thenReply(replyTo) {
               case openCart: Option[OpenCart] =>
                 StatusReply.Success(Summary(openCart.get.items, openCart.get.checkoutDate.isDefined))
@@ -46,7 +46,7 @@ object Commands {
 
   private def handleOpenCartCommand(cartId: String, state: OpenCart, cmd:Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
-      case CreateCart(_, _, replyTo) =>
+      case CreateCart(_, _, _, replyTo) =>
         unSupportedCommandReply(replyTo)
       case AddLineItem(variantId, quantity, replyTo) =>
         if (state.hasItem(variantId))

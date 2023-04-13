@@ -40,7 +40,7 @@ class CartEntitySpec
   "The cart during creation" should {
     "be created with a item" in {
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
-        replyTo => Commands.CreateCart("foo", 42, replyTo)
+        replyTo => Commands.CreateCart("foo", 42, None, replyTo)
       )
 
       result.reply should ===(
@@ -49,16 +49,18 @@ class CartEntitySpec
         )
       )
 
-      result.event should ===(Events.CartCreated(cartId, "foo", 42))
+      result.event should ===(Events.CartCreated(cartId, "foo", 42, None))
 
       result.stateOfType[Option[OpenCart]].isDefined shouldBe true
       result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
       result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> 42)
     }
 
+    // TODO: Create test for CreateCart command with metadata for line item
+
     "reply with an error if quantity is less than or equal to zero" in {
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
-        replyTo => Commands.CreateCart("foo", 0, replyTo)
+        replyTo => Commands.CreateCart("foo", 0, None, replyTo)
       )
 
       result.reply should ===(
@@ -85,7 +87,7 @@ class CartEntitySpec
 
   "An open cart" should {
     "be able to add an item with a quantity greater than zero" in {
-      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, _))
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, None, _))
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
         replyTo => Commands.AddLineItem("bar", 35, replyTo)
       )
@@ -104,7 +106,7 @@ class CartEntitySpec
     }
 
     "reply with error when adding item to cart that already exists" in {
-      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, _))
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, None, _))
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
         replyTo => Commands.AddLineItem("foo", 0, replyTo)
       )
@@ -121,7 +123,7 @@ class CartEntitySpec
     }
 
     "reply with error when adding item to cart with quantity less than or equal to zero" in {
-      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, _))
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, None, _))
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
         replyTo => Commands.AddLineItem("bar", 0, replyTo)
       )
@@ -136,6 +138,8 @@ class CartEntitySpec
       result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
       result.stateOfType[Option[OpenCart]].get.items shouldBe Map("foo" -> 42)
     }
+
+    // TODO: Enhance the AddLineItem process to include metadata updates
   }
 
 }

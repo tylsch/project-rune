@@ -6,18 +6,20 @@ import com.rune.harmonia.domain.entities.Cart._
 import java.time.Instant
 
 object Events {
+
   sealed trait Event extends CborSerializable {
     def cartId: String
   }
 
-  final case class CartCreated(cartId: String, variantId: String, quantity: Int) extends Event
+  final case class CartCreated(cartId: String, variantId: String, quantity: Int, metadata: Option[Map[String, String]]) extends Event
   final case class LineItemAdded(cartId: String, variantId: String, quantity: Int) extends Event
 
   def handleEvent(state: Option[State], evt: Event): Option[State] = {
     state match {
       case None =>
         evt match {
-          case CartCreated(_, variantId, quantity) => Some(OpenCart(Map(variantId -> quantity), None))
+          case CartCreated(_, variantId, quantity, None) => Some(OpenCart(Map(variantId -> quantity), None, None))
+          case CartCreated(_, variantId, quantity, Some(metadata)) => Some(OpenCart(Map(variantId -> quantity), Some(Map(variantId -> metadata)), None))
           case _ => throw new IllegalStateException(s"Invalid event [$evt] in state [NonExistingCart]")
         }
 
