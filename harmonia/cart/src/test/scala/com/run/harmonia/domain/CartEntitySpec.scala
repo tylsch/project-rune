@@ -6,12 +6,12 @@ import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
 import com.rune.harmonia.app.cart._
 import com.rune.harmonia.domain.entities.Cart
 import com.rune.harmonia.domain.entities.Cart.OpenCart
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
 
 object CartEntitySpec {
-  val config = ConfigFactory
+  val config: Config = ConfigFactory
     .parseString(
       """
         akka.actor.serialization-bindings {
@@ -45,7 +45,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary(Map("foo" -> 42), None, false)
+          Replies.Summary(Map("foo" -> 42), None, checkedOut = false)
         )
       )
 
@@ -63,7 +63,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary(Map("foo" -> 42), Some(Map("foo" -> Map("K1" -> "V1"))), false)
+          Replies.Summary(Map("foo" -> 42), Some(Map("foo" -> Map("K1" -> "V1"))), checkedOut = false)
         )
       )
 
@@ -111,7 +111,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary(Map("foo" -> 42, "bar" -> 35), None, false)
+          Replies.Summary(Map("foo" -> 42, "bar" -> 35), None, checkedOut = false)
         )
       )
 
