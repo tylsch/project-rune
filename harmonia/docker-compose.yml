@@ -24,7 +24,7 @@ services:
       POSTGRES_PASSWORD: harmonia-admin
 
   redpanda:
-    image: redpandadata/redpanda:v23.1.1
+    image: docker.redpanda.com/redpandadata/redpanda:v23.1.7
     command:
       - redpanda start
       - --smp 1
@@ -45,7 +45,7 @@ services:
       - redpanda_network
 
   console:
-    image: redpandadata/console:v2.2.2
+    image: docker.redpanda.com/redpandadata/console:v2.2.3
     entrypoint: /bin/sh
     command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"
     environment:
