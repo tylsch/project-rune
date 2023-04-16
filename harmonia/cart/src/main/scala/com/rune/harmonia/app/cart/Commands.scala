@@ -12,6 +12,29 @@ object Commands {
   sealed trait Command extends CborSerializable
   // TODO: Refactor CreateCart command to match Medusa Create a Cart: https://docs.medusajs.com/api/store#tag/Carts/operation/PostCart
   final case class CreateCart(variantId: String, quantity: Int, metadata: Option[Map[String, String]], replyTo: ActorRef[StatusReply[Summary]]) extends Command
+
+  /** Command to create a cart within a given region and sales channel.
+  *
+   * Modifications from Medusa.js Create Cart API:
+   *
+   * 1. Enhanced to include metadata for line items.
+   *
+   * @param regionId The ID of the Region to create the Cart in.
+   * @param salesChannelId The ID of the Sales channel to create the Cart in.
+   * @param countryCode The 2 character ISO country code to create the Cart in.
+   * @param items Map of variantId and quantity pairs to generate list items from.
+   * @param itemsMetadata Optional map of key/value pairs for a given line item in the cart.
+   * @param context Optional map of key/value pairs that provide context about the cart.
+   * */
+  final case class CreateCartV2(
+                                 regionId: String,
+                                 salesChannelId: String,
+                                 countryCode: String,
+                                 items: Map[String, Int],
+                                 itemsMetadata: Option[Map[String, String]],
+                                 context: Option[Map[String, String]],
+                                 replyTo: ActorRef[StatusReply[Summary]]
+                               ) extends Command
   final case class AddLineItem(variantId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
