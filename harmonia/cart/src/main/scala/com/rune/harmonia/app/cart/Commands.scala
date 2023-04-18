@@ -10,8 +10,6 @@ import com.rune.harmonia.domain.entities.Cart._
 
 object Commands {
   sealed trait Command extends CborSerializable
-  // TODO: Refactor CreateCart command to match Medusa Create a Cart: https://docs.medusajs.com/api/store#tag/Carts/operation/PostCart
-  final case class CreateCart(variantId: String, quantity: Int, metadata: Option[Map[String, String]], replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   /** Command to create a cart within a given region and sales channel.
   *
@@ -26,12 +24,12 @@ object Commands {
    * @param itemsMetadata Optional map of key/value pairs for a given line item in the cart.
    * @param context Optional map of key/value pairs that provide context about the cart.
    * */
-  final case class CreateCartV2(
+  final case class CreateCart(
                                  regionId: String,
                                  salesChannelId: String,
                                  countryCode: String,
                                  items: Map[String, Int],
-                                 itemsMetadata: Option[Map[String, String]],
+                                 itemsMetadata: Option[Map[String, Map[String, String]]],
                                  context: Option[Map[String, String]],
                                  replyTo: ActorRef[StatusReply[Summary]]
                                ) extends Command
@@ -49,18 +47,22 @@ object Commands {
 
   private def handleInitialCommand(cartId: String, cmd: Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
-      case CreateCart(variantId, quantity, metadata, replyTo) =>
-        if (quantity <= 0)
-          Effect
-            .reply(replyTo)(
-              StatusReply.Error("Quantity must be greater than zero")
-            )
+      case CreateCart(regionId, salesChannelId, countryCode, items, itemsMetadata, context, replyTo) =>
+        if (regionId.isEmpty)
+          Effect.reply(replyTo)(StatusReply.Error("Region must be set for cart"))
+        else if (salesChannelId.isEmpty)
+          Effect.reply(replyTo)(StatusReply.Error("Sales Channel must be set for cart"))
+        else if (countryCode.isEmpty)
+          Effect.reply(replyTo)(StatusReply.Error("Country code must be set for cart"))
+        else if (!items.exists { case (_, quantity) => quantity <= 0 })
+          Effect.reply(replyTo)(StatusReply.Error("Item was found with zero quantity, all items must have a quantity greater than zero"))
         else
           Effect
-            .persist(CartCreated(cartId, variantId, quantity, metadata))
+            .persist(CartCreated(cartId, regionId, salesChannelId, countryCode, items, itemsMetadata, context))
             .thenReply(replyTo) {
-              case openCart: Option[OpenCart] =>
-                StatusReply.Success(Summary(openCart.get.items, openCart.get.metadata, openCart.get.checkoutDate.isDefined))
+              case Some(OpenCart(regionId, salesChannelId, countryCode, lineItems, context, checkoutDate)) =>
+                StatusReply.Success(Summary(regionId, salesChannelId, countryCode, lineItems, context, checkoutDate.isDefined))
+
             }
       case AddLineItem(_, _, replyTo) =>
         unSupportedCommandReply(replyTo)
@@ -70,7 +72,7 @@ object Commands {
 
   private def handleOpenCartCommand(cartId: String, state: OpenCart, cmd:Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
-      case CreateCart(_, _, _, replyTo) =>
+      case CreateCart(_, _, _, _, _, _, replyTo) =>
         unSupportedCommandReply(replyTo)
       case AddLineItem(variantId, quantity, replyTo) =>
         if (state.hasItem(variantId))
@@ -87,8 +89,8 @@ object Commands {
           Effect
             .persist(LineItemAdded(cartId, variantId, quantity))
             .thenReply(replyTo) {
-              case openCart: Option[OpenCart] =>
-                StatusReply.Success(Summary(openCart.get.items, None, openCart.get.checkoutDate.isDefined))
+              case Some(openCart: OpenCart) =>
+                StatusReply.Success(Summary(openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, openCart.checkoutDate.isDefined))
             }
     }
   }

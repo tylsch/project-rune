@@ -12,15 +12,31 @@ object Events {
     def cartId: String
   }
 
-  final case class CartCreated(cartId: String, variantId: String, quantity: Int, metadata: Option[Map[String, String]]) extends Event
+  final case class CartCreated(
+                                   cartId: String,
+                                   regionId: String,
+                                   salesChannelId: String,
+                                   countryCode: String,
+                                   items: Map[String, Int],
+                                   itemsMetadata: Option[Map[String, Map[String, String]]],
+                                   context: Option[Map[String, String]]
+                                 ) extends Event
   final case class LineItemAdded(cartId: String, variantId: String, quantity: Int) extends Event
 
   def handleEvent(state: Option[State], evt: Event): Option[State] = {
     state match {
       case None =>
         evt match {
-          case CartCreated(_, variantId, quantity, None) => Some(OpenCart(Map(variantId -> LineItem(quantity, None)), None, None))
-          case CartCreated(_, variantId, quantity, Some(metadata)) => Some(OpenCart(Map(variantId -> LineItem(quantity, None)), Some(metadata), None))
+          case CartCreated(_, regionId, salesChannelId, countryCode, items, itemsMetadata, context) =>
+            val lineItems = items.map {
+              case (variantId, quantity) =>
+                if (itemsMetadata.isEmpty)
+                  (variantId, LineItem(quantity, None))
+                else
+                  (variantId, LineItem(quantity = quantity, metadata = itemsMetadata.get.get(variantId)))
+            }
+
+            Some(OpenCart(regionId, salesChannelId, countryCode, lineItems, context = context, checkoutDate = None))
           case _ => throw new IllegalStateException(s"Invalid event [$evt] in state [NonExistingCart]")
         }
 

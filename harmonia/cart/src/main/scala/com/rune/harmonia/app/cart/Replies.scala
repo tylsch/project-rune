@@ -4,7 +4,15 @@ import com.rune.harmonia.domain.CborSerializable
 import com.rune.harmonia.domain.entities.LineItem
 
 object Replies {
-  private type CartMetadata = Option[Map[String, String]]
+  private type Context = Option[Map[String, String]]
 
-  final case class Summary(items: Map[String, LineItem], metadata: CartMetadata, checkedOut: Boolean) extends CborSerializable
+  final case class Summary(
+                            regionId: String,
+                            salesChannelId: String,
+                            countryCode: String,
+                            lineItems: Map[String, LineItem],
+                            context: Context,
+                            checkoutDate: Boolean
+                          ) extends CborSerializable
+
 }
