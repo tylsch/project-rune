@@ -24,6 +24,7 @@ object Commands {
    * @param items Map of variantId and quantity pairs to generate list items from.
    * @param itemsMetadata Optional map of key/value pairs for a given line item in the cart.
    * @param context Optional map of key/value pairs that provide context about the cart.
+   * @param replyTo ActorRef to send reply back to
    * */
   final case class CreateCart(customerId: String,
                               regionId: String,
@@ -34,6 +35,18 @@ object Commands {
                               context: Option[Map[String, String]],
                               replyTo: ActorRef[StatusReply[Summary]]
                                ) extends Command
+
+  /** Command to add line item to cart.
+   *
+   * Modifications from Medusa.js Create Cart API:
+   *
+   * 1. Enhanced to include metadata for line items.
+   *
+   * @param variantId The id of the Product Variant to generate the Line Item from.
+   * @param quantity The quantity of the Product Variant to add to the Line Item.
+   * @param metadata Optional map of key/value pairs for the given line item in the cart.
+   * @param replyTo ActorRef to send reply back to
+   * */
   final case class AddLineItem(variantId: String, quantity: Int, metadata: Option[Map[String, String]], replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
