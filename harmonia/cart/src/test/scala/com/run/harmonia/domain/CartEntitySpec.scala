@@ -151,7 +151,7 @@ class CartEntitySpec
 
     "reply with an error if another command besides CreateCart is used" in {
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
-        replyTo => Commands.AddLineItem("foo", 0, replyTo)
+        replyTo => Commands.AddLineItem("foo", 0, None, replyTo)
       )
 
       result.reply should ===(
@@ -165,70 +165,72 @@ class CartEntitySpec
 
   "An open cart" should {
     "be able to add an item with a quantity greater than zero" in {
-      fail("Not Implemented")
-      // TODO: Refactor for new Create and Add Line Item commands, events, and replies
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.AddLineItem("bar", 35, Some(Map("K1" -> "V1")), replyTo)
+      )
 
-//      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, None, _))
-//      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
-//        replyTo => Commands.AddLineItem("bar", 35, replyTo)
-//      )
-//
-//      result.reply should ===(
-//        StatusReply.Success(
-//          Replies.Summary(Map("foo" -> LineItem(42, None), "bar" -> LineItem(35, None)), None, checkedOut = false)
-//        )
-//      )
-//
-//      result.event should ===(Events.LineItemAdded(cartId, "bar", 35))
-//
-//      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
-//      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
-//      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None), "bar" -> LineItem(35, None))
+      result.reply should ===(
+        StatusReply.Success(
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, None), "bar" -> LineItem(35, Some(Map("K1" -> "V1")))), None, checkoutDate = false)
+        )
+      )
+
+      result.event should ===(Events.LineItemAdded(cartId, "bar", 35, Some(Map("K1" -> "V1"))))
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None), "bar" -> LineItem(35, Some(Map("K1" -> "V1"))))
     }
 
-    // TODO: Refactor, if item already exists then it should just increase the quantity that was passed in, not error.
-    //  If supplied metadata will apply new key/value and overwrite value for existing keys
     "reply with error when adding item to cart that already exists" in {
-      fail("Not Implemented")
-      // TODO: Refactor for new Create and Add Line Item commands, events, and replies
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.AddLineItem("foo", 1, Some(Map("K2" -> "V2")), replyTo)
+      )
 
-//      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, None, _))
-//      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
-//        replyTo => Commands.AddLineItem("foo", 0, replyTo)
-//      )
-//
-//      result.reply should ===(
-//        StatusReply.Error("Item \"foo\" was already added to this shopping cart")
-//      )
-//
-//      result.hasNoEvents shouldBe true
-//
-//      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
-//      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
-//      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> 42)
+      result.reply should ===(
+        StatusReply.Error("Item \"foo\" was already added to this shopping cart")
+      )
+
+      result.hasNoEvents shouldBe true
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
     }
 
     "reply with error when adding item to cart with quantity less than or equal to zero" in {
-      fail("Not Implemented")
-      // TODO: Refactor for new Create and Add Line Item commands, events, and replies
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.AddLineItem("bar", 0, Some(Map("K2" -> "V2")), replyTo)
+      )
 
-//      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("foo", 42, None, _))
-//      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
-//        replyTo => Commands.AddLineItem("bar", 0, replyTo)
-//      )
-//
-//      result.reply should ===(
-//        StatusReply.Error("Quantity must be greater than zero")
-//      )
-//
-//      result.hasNoEvents shouldBe true
-//
-//      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
-//      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
-//      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> 42)
+      result.reply should ===(
+        StatusReply.Error("Quantity must be greater than zero")
+      )
+
+      result.hasNoEvents shouldBe true
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
     }
-
-    // TODO: Enhance the AddLineItem process to include metadata updates
   }
 
 }

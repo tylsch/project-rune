@@ -22,7 +22,7 @@ object Events {
                                 itemsMetadata: Option[Map[String, Map[String, String]]],
                                 context: Option[Map[String, String]]
                                  ) extends Event
-  final case class LineItemAdded(cartId: String, variantId: String, quantity: Int) extends Event
+  final case class LineItemAdded(cartId: String, variantId: String, quantity: Int, metadata: Option[Map[String, String]]) extends Event
 
   def handleEvent(state: Option[State], evt: Event): Option[State] = {
     state match {
@@ -43,7 +43,7 @@ object Events {
 
       case Some(openCart: OpenCart) =>
         evt match {
-          case LineItemAdded(_, variantId, quantity) => Some(openCart.updateItem(variantId, quantity))
+          case LineItemAdded(_, variantId, quantity, metadata) => Some(openCart.updateItem(variantId, quantity, metadata))
           case _ => throw new IllegalStateException(s"Invalid event [$evt] in state [OpenCart]")
         }
     }

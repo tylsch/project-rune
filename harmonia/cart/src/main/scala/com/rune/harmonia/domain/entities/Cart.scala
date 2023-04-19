@@ -23,13 +23,6 @@ object Cart {
     def hasItem(variantId: String): Boolean =
       lineItems.contains(variantId)
 
-    def updateItem(variantId: String, quantity: Int): State = {
-      quantity match {
-        case 0 => copy(lineItems = lineItems - variantId)
-        case _ => copy(lineItems = lineItems + (variantId -> LineItem(quantity, None)))
-      }
-    }
-
     def updateItem(variantId: String, quantity: Int, metadata: Option[Map[String, String]]): State = {
       quantity match {
         case 0 => copy(lineItems = lineItems - variantId)

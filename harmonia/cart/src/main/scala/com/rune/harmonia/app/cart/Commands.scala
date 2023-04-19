@@ -34,7 +34,7 @@ object Commands {
                               context: Option[Map[String, String]],
                               replyTo: ActorRef[StatusReply[Summary]]
                                ) extends Command
-  final case class AddLineItem(variantId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
+  final case class AddLineItem(variantId: String, quantity: Int, metadata: Option[Map[String, String]], replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
     state match {
@@ -67,7 +67,7 @@ object Commands {
                 StatusReply.Success(Summary(customerId, regionId, salesChannelId, countryCode, lineItems, context, checkoutDate.isDefined))
 
             }
-      case AddLineItem(_, _, replyTo) =>
+      case AddLineItem(_, _, _, replyTo) =>
         unSupportedCommandReply(replyTo)
 
     }
@@ -77,7 +77,7 @@ object Commands {
     cmd match {
       case CreateCart(_, _, _, _, _, _, _, replyTo) =>
         unSupportedCommandReply(replyTo)
-      case AddLineItem(variantId, quantity, replyTo) =>
+      case AddLineItem(variantId, quantity, metadata, replyTo) =>
         if (state.hasItem(variantId))
           Effect
             .reply(replyTo)(
@@ -90,7 +90,7 @@ object Commands {
             )
         else
           Effect
-            .persist(LineItemAdded(cartId, variantId, quantity))
+            .persist(LineItemAdded(cartId, variantId, quantity, metadata))
             .thenReply(replyTo) {
               case Some(openCart: OpenCart) =>
                 StatusReply.Success(Summary(openCart.customerId, openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, openCart.checkoutDate.isDefined))
