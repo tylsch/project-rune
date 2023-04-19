@@ -17,6 +17,7 @@ object Commands {
    *
    * 1. Enhanced to include metadata for line items.
    *
+   * @param customerId The ID of the customer who placed the order
    * @param regionId The ID of the Region to create the Cart in.
    * @param salesChannelId The ID of the Sales channel to create the Cart in.
    * @param countryCode The 2 character ISO country code to create the Cart in.
@@ -24,14 +25,14 @@ object Commands {
    * @param itemsMetadata Optional map of key/value pairs for a given line item in the cart.
    * @param context Optional map of key/value pairs that provide context about the cart.
    * */
-  final case class CreateCart(
-                                 regionId: String,
-                                 salesChannelId: String,
-                                 countryCode: String,
-                                 items: Map[String, Int],
-                                 itemsMetadata: Option[Map[String, Map[String, String]]],
-                                 context: Option[Map[String, String]],
-                                 replyTo: ActorRef[StatusReply[Summary]]
+  final case class CreateCart(customerId: String,
+                              regionId: String,
+                              salesChannelId: String,
+                              countryCode: String,
+                              items: Map[String, Int],
+                              itemsMetadata: Option[Map[String, Map[String, String]]],
+                              context: Option[Map[String, String]],
+                              replyTo: ActorRef[StatusReply[Summary]]
                                ) extends Command
   final case class AddLineItem(variantId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
@@ -47,21 +48,23 @@ object Commands {
 
   private def handleInitialCommand(cartId: String, cmd: Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
-      case CreateCart(regionId, salesChannelId, countryCode, items, itemsMetadata, context, replyTo) =>
-        if (regionId.isEmpty)
-          Effect.reply(replyTo)(StatusReply.Error("Region must be set for cart"))
+      case CreateCart(customerId, regionId, salesChannelId, countryCode, items, itemsMetadata, context, replyTo) =>
+        if (customerId.isEmpty)
+          Effect.reply(replyTo)(StatusReply.Error("customerId must be set for cart"))
+        else if (regionId.isEmpty)
+          Effect.reply(replyTo)(StatusReply.Error("regionId must be set for cart"))
         else if (salesChannelId.isEmpty)
-          Effect.reply(replyTo)(StatusReply.Error("Sales Channel must be set for cart"))
+          Effect.reply(replyTo)(StatusReply.Error("salesChannelId must be set for cart"))
         else if (countryCode.isEmpty)
-          Effect.reply(replyTo)(StatusReply.Error("Country code must be set for cart"))
-        else if (!items.exists { case (_, quantity) => quantity <= 0 })
+          Effect.reply(replyTo)(StatusReply.Error("countryCode must be set for cart"))
+        else if (items.exists { case (_, quantity) => quantity <= 0 })
           Effect.reply(replyTo)(StatusReply.Error("Item was found with zero quantity, all items must have a quantity greater than zero"))
         else
           Effect
-            .persist(CartCreated(cartId, regionId, salesChannelId, countryCode, items, itemsMetadata, context))
+            .persist(CartCreated(cartId, customerId, regionId, salesChannelId, countryCode, items, itemsMetadata, context))
             .thenReply(replyTo) {
-              case Some(OpenCart(regionId, salesChannelId, countryCode, lineItems, context, checkoutDate)) =>
-                StatusReply.Success(Summary(regionId, salesChannelId, countryCode, lineItems, context, checkoutDate.isDefined))
+              case Some(OpenCart(customerId, regionId, salesChannelId, countryCode, lineItems, context, checkoutDate)) =>
+                StatusReply.Success(Summary(customerId, regionId, salesChannelId, countryCode, lineItems, context, checkoutDate.isDefined))
 
             }
       case AddLineItem(_, _, replyTo) =>
@@ -72,7 +75,7 @@ object Commands {
 
   private def handleOpenCartCommand(cartId: String, state: OpenCart, cmd:Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
-      case CreateCart(_, _, _, _, _, _, replyTo) =>
+      case CreateCart(_, _, _, _, _, _, _, replyTo) =>
         unSupportedCommandReply(replyTo)
       case AddLineItem(variantId, quantity, replyTo) =>
         if (state.hasItem(variantId))
@@ -90,7 +93,7 @@ object Commands {
             .persist(LineItemAdded(cartId, variantId, quantity))
             .thenReply(replyTo) {
               case Some(openCart: OpenCart) =>
-                StatusReply.Success(Summary(openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, openCart.checkoutDate.isDefined))
+                StatusReply.Success(Summary(openCart.customerId, openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, openCart.checkoutDate.isDefined))
             }
     }
   }

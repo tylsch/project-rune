@@ -7,6 +7,7 @@ object Replies {
   private type Context = Option[Map[String, String]]
 
   final case class Summary(
+                            customerId: String,
                             regionId: String,
                             salesChannelId: String,
                             countryCode: String,

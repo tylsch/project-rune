@@ -11,6 +11,7 @@ object Cart {
   }
 
   final case class OpenCart(
+                             customerId: String,
                              regionId: String,
                              salesChannelId: String,
                              countryCode: String,

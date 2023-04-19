@@ -13,13 +13,14 @@ object Events {
   }
 
   final case class CartCreated(
-                                   cartId: String,
-                                   regionId: String,
-                                   salesChannelId: String,
-                                   countryCode: String,
-                                   items: Map[String, Int],
-                                   itemsMetadata: Option[Map[String, Map[String, String]]],
-                                   context: Option[Map[String, String]]
+                                cartId: String,
+                                customerId: String,
+                                regionId: String,
+                                salesChannelId: String,
+                                countryCode: String,
+                                items: Map[String, Int],
+                                itemsMetadata: Option[Map[String, Map[String, String]]],
+                                context: Option[Map[String, String]]
                                  ) extends Event
   final case class LineItemAdded(cartId: String, variantId: String, quantity: Int) extends Event
 
@@ -27,7 +28,7 @@ object Events {
     state match {
       case None =>
         evt match {
-          case CartCreated(_, regionId, salesChannelId, countryCode, items, itemsMetadata, context) =>
+          case CartCreated(_, customerId, regionId, salesChannelId, countryCode, items, itemsMetadata, context) =>
             val lineItems = items.map {
               case (variantId, quantity) =>
                 if (itemsMetadata.isEmpty)
@@ -36,7 +37,7 @@ object Events {
                   (variantId, LineItem(quantity = quantity, metadata = itemsMetadata.get.get(variantId)))
             }
 
-            Some(OpenCart(regionId, salesChannelId, countryCode, lineItems, context = context, checkoutDate = None))
+            Some(OpenCart(customerId, regionId, salesChannelId, countryCode, lineItems, context = context, checkoutDate = None))
           case _ => throw new IllegalStateException(s"Invalid event [$evt] in state [NonExistingCart]")
         }
 

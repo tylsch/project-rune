@@ -39,61 +39,114 @@ class CartEntitySpec
 
   "The cart during creation" should {
     "be created with a item" in {
-      fail("Not Implemented")
-      // TODO: Refactor for new Create commands, events, and replies
-//      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
-//        replyTo => Commands.CreateCart("foo", 42, None, replyTo)
-//      )
-//
-//      result.reply should ===(
-//        StatusReply.Success(
-//          Replies.Summary(Map("foo" -> LineItem(42, None)), None, checkedOut = false)
-//        )
-//      )
-//
-//      result.event should ===(Events.CartCreated(cartId, "foo", 42, None))
-//
-//      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
-//      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
-//      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Success(
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, None)), None, checkoutDate = false)
+        )
+      )
+
+      result.event should ===(Events.CartCreated(cartId, "C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None))
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
     }
 
-    "attach metadata to item when included" in {
-      fail("Not Implemented")
-      // TODO: Refactor for new Create commands, events, and replies
-//      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
-//        replyTo => Commands.CreateCart("foo", 42, Some(Map("K1" -> "V1")), replyTo)
-//      )
-//
-//      result.reply should ===(
-//        StatusReply.Success(
-//          Replies.Summary(Map("foo" -> LineItem(42, None)), Some(Map("K1" -> "V1")), checkedOut = false)
-//        )
-//      )
-//
-//      result.event should ===(Events.CartCreated(cartId, "foo", 42, Some(Map("K1" -> "V1"))))
-//
-//      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
-//      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
-//      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
-//      result.stateOfType[Option[OpenCart]].get.metadata shouldBe Some(Map("K1" -> "V1"))
+    "attach metadata to item and context to cart when included" in {
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), Some(Map("foo" -> Map("K1" -> "V1"))), Some(Map("KC1" -> "VC1")), replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Success(
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, Some(Map("K1" -> "V1")))), Some(Map("KC1" -> "VC1")), checkoutDate = false)
+        )
+      )
+
+      result.event should ===(Events.CartCreated(cartId, "C1", "R1", "SC-1", "US", Map("foo" -> 42), Some(Map("foo" -> Map("K1" -> "V1"))), Some(Map("KC1" -> "VC1"))))
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe Some(Map("KC1" -> "VC1"))
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, Some(Map("K1" -> "V1"))))
     }
 
-    // TODO: Add tests to error for missing region, sales channel, and country code
+    "reply with an error if customer ID is empty" in {
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CreateCart("", "R1", "SC-1", "US", Map("foo" -> 1), None, None, replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("customerId must be set for cart")
+      )
+
+      result.hasNoEvents shouldBe true
+      result.stateOfType[Option[Cart.State]].isEmpty shouldBe true
+    }
+
+    "reply with an error if region is empty" in {
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CreateCart("C1", "", "SC-1", "US", Map("foo" -> 1), None, None, replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("regionId must be set for cart")
+      )
+
+      result.hasNoEvents shouldBe true
+      result.stateOfType[Option[Cart.State]].isEmpty shouldBe true
+    }
+
+    "reply with an error if region is sales channel is empty" in {
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CreateCart("C1", "RC-1", "", "US", Map("foo" -> 1), None, None, replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("salesChannelId must be set for cart")
+      )
+
+      result.hasNoEvents shouldBe true
+      result.stateOfType[Option[Cart.State]].isEmpty shouldBe true
+    }
+
+    "reply with an error if country code is empty" in {
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CreateCart("C1", "RC-1", "SC-1", "", Map("foo" -> 1), None, None, replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("countryCode must be set for cart")
+      )
+
+      result.hasNoEvents shouldBe true
+      result.stateOfType[Option[Cart.State]].isEmpty shouldBe true
+    }
 
     "reply with an error if quantity is less than or equal to zero" in {
-      fail("Not Implemented")
-      // TODO: Refactor for new Create commands, events, and replies
-//      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
-//        replyTo => Commands.CreateCart("foo", 0, None, replyTo)
-//      )
-//
-//      result.reply should ===(
-//        StatusReply.Error("Quantity must be greater than zero")
-//      )
-//
-//      result.hasNoEvents shouldBe true
-//      result.stateOfType[Option[Cart.State]].isEmpty shouldBe true
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 0), None, None, replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("Item was found with zero quantity, all items must have a quantity greater than zero")
+      )
+
+      result.hasNoEvents shouldBe true
+      result.stateOfType[Option[Cart.State]].isEmpty shouldBe true
     }
 
     "reply with an error if another command besides CreateCart is used" in {
