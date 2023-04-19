@@ -49,6 +49,8 @@ object Commands {
    * */
   final case class AddLineItem(variantId: String, quantity: Int, metadata: Option[Map[String, String]], replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
+  // TODO: Implement RemoveItem, AdjustQuantity, and Checkout Commands
+
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
     state match {
       case None => handleInitialCommand(cartId, cmd)
