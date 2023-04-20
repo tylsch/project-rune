@@ -48,6 +48,8 @@ sbt exchange/publishLocal
     ```
 
 ## TODO Items
-1. Model cart domain application around Medusa.js
-2. Update exchange class to publishLocal to take advantage of Loading proto files from artifacts: https://doc.akka.io/docs/akka-grpc/current/buildtools/sbt.html
-3. Complete Medusa.js checkout processing using zio-temporal & Temporal
+1. Model cart aggregate service around Medusa.js
+2. Create CartEntityPersistenceSpec using Persistence TestKit (https://doc.akka.io/docs/akka/current/typed/persistence-testing.html)
+3. Create Akka Projection for cart service to produce multi-event topic to Redpanda
+4. Model region aggregate service around Medusa.js
+5. Create ZIO App based on Medusa.js checkout processing using zio-temporal & Temporal
