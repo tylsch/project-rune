@@ -187,7 +187,6 @@ class CartEntitySpec
       result.stateOfType[Option[OpenCart]].get.context shouldBe None
       result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None), "bar" -> LineItem(35, Some(Map("K1" -> "V1"))))
     }
-
     "reply with error when adding item to cart that already exists" in {
       eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
@@ -209,7 +208,6 @@ class CartEntitySpec
       result.stateOfType[Option[OpenCart]].get.context shouldBe None
       result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
     }
-
     "reply with error when adding item to cart with quantity less than or equal to zero" in {
       eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
       val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
@@ -231,6 +229,8 @@ class CartEntitySpec
       result.stateOfType[Option[OpenCart]].get.context shouldBe None
       result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
     }
+
+    //TODO: Write tests for UpdateLineItem, RemoveLineItem, CompleteCart
   }
 
 }

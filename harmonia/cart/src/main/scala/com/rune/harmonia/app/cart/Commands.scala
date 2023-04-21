@@ -49,12 +49,17 @@ object Commands {
    * */
   final case class AddLineItem(variantId: String, quantity: Int, metadata: Option[Map[String, String]], replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
-  // TODO: Implement RemoveItem, AdjustQuantity, and Checkout Commands
+  final case class UpdateLineItem(variantId: String, quantity: Int, metadata: Option[Map[String, String]], replyTo: ActorRef[StatusReply[Summary]]) extends Command
+
+  final case class RemoveLineItem(variantId: String, replyTo: ActorRef[StatusReply[Summary]]) extends Command
+
+  final case class CompleteCart(replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
     state match {
       case None => handleInitialCommand(cartId, cmd)
       case Some(openCart: OpenCart) => handleOpenCartCommand(cartId, openCart, cmd)
+      case Some(completedCart: CompletedCart) => handleCompletedCartCommand(cartId, completedCart, cmd)
     }
   }
 
@@ -84,9 +89,16 @@ object Commands {
             }
       case AddLineItem(_, _, _, replyTo) =>
         unSupportedCommandReply(replyTo)
-
+      case UpdateLineItem(_, _, _, replyTo) =>
+        unSupportedCommandReply(replyTo)
+      case RemoveLineItem(_, replyTo) =>
+        unSupportedCommandReply(replyTo)
+      case CompleteCart(replyTo) =>
+        unSupportedCommandReply(replyTo)
     }
   }
+
+  // TODO: Implement UpdateLineItem, RemoveLineItem, and CompleteCart Commands
 
   private def handleOpenCartCommand(cartId: String, state: OpenCart, cmd:Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
@@ -110,6 +122,27 @@ object Commands {
               case Some(openCart: OpenCart) =>
                 StatusReply.Success(Summary(openCart.customerId, openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, openCart.checkoutDate.isDefined))
             }
+      case UpdateLineItem(_, _, _, replyTo) =>
+        unSupportedCommandReply(replyTo)
+      case RemoveLineItem(_, replyTo) =>
+        unSupportedCommandReply(replyTo)
+      case CompleteCart(replyTo) =>
+        unSupportedCommandReply(replyTo)
+    }
+  }
+
+  private def handleCompletedCartCommand(cartId: String, state: CompletedCart, cmd: Command): ReplyEffect[Event, Option[State]] = {
+    cmd match {
+      case CreateCart(_, _, _, _, _, _, _, replyTo) =>
+        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
+      case AddLineItem(_, _, _, replyTo) =>
+        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
+      case UpdateLineItem(_, _, _, replyTo) =>
+        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
+      case RemoveLineItem(_, replyTo) =>
+        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
+      case CompleteCart(replyTo) =>
+        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
     }
   }
 }
