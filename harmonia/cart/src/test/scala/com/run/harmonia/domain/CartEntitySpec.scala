@@ -229,6 +229,71 @@ class CartEntitySpec
       result.stateOfType[Option[OpenCart]].get.context shouldBe None
       result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
     }
+    "be able to update an item with a quantity greater than zero" in {
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), Some(Map("foo" -> Map("K1" -> "V1"))), None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.UpdateLineItem("foo", 22, Some(Map("K2" -> "V2")), replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Success(
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(22, Some(Map("K2" -> "V2")))), None, checkoutDate = false)
+        )
+      )
+
+      result.event should ===(Events.LineItemUpdated(cartId, "foo", 22, Some(Map("K2" -> "V2"))))
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(22, Some(Map("K2" -> "V2"))))
+    }
+    "reply with error when updating item to cart that doesn't exists" in {
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.UpdateLineItem("barr", 1, Some(Map("K2" -> "V2")), replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("Item \"barr\" does not exist in the cart")
+      )
+
+      result.hasNoEvents shouldBe true
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
+    }
+    "reply with error when updating an item to cart with quantity less than or equal to zero" in {
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.UpdateLineItem("foo", 0, Some(Map("K2" -> "V2")), replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("Quantity must be greater than zero")
+      )
+
+      result.hasNoEvents shouldBe true
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
+    }
 
     //TODO: Write tests for UpdateLineItem, RemoveLineItem, CompleteCart
   }

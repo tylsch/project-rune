@@ -122,8 +122,24 @@ object Commands {
               case Some(openCart: OpenCart) =>
                 StatusReply.Success(Summary(openCart.customerId, openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, openCart.checkoutDate.isDefined))
             }
-      case UpdateLineItem(_, _, _, replyTo) =>
-        unSupportedCommandReply(replyTo)
+      case UpdateLineItem(variantId, quantity, metadata, replyTo) =>
+        if (!state.hasItem(variantId))
+          Effect
+            .reply(replyTo)(
+              StatusReply.Error(s"Item \"$variantId\" does not exist in the cart")
+            )
+        else if (quantity <= 0)
+          Effect
+            .reply(replyTo)(
+              StatusReply.Error("Quantity must be greater than zero")
+            )
+        else
+          Effect
+            .persist(LineItemUpdated(cartId, variantId, quantity, metadata))
+            .thenReply(replyTo) {
+              case Some(openCart: OpenCart) =>
+                StatusReply.Success(Summary(openCart.customerId, openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, openCart.checkoutDate.isDefined))
+            }
       case RemoveLineItem(_, replyTo) =>
         unSupportedCommandReply(replyTo)
       case CompleteCart(replyTo) =>
