@@ -5,10 +5,12 @@ import akka.pattern.StatusReply
 import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
 import com.rune.harmonia.app.cart._
 import com.rune.harmonia.domain.entities.{Cart, LineItem}
-import com.rune.harmonia.domain.entities.Cart.OpenCart
+import com.rune.harmonia.domain.entities.Cart.{CheckedOutCart, OpenCart}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
+
+import java.time.Instant
 
 object CartEntitySpec {
   val config: Config = ConfigFactory
@@ -45,7 +47,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, None)), None, checkoutDate = false)
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, None)), None, checkoutDate = None)
         )
       )
 
@@ -68,7 +70,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, Some(Map("K1" -> "V1")))), Some(Map("KC1" -> "VC1")), checkoutDate = false)
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, Some(Map("K1" -> "V1")))), Some(Map("KC1" -> "VC1")), checkoutDate = None)
         )
       )
 
@@ -172,7 +174,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, None), "bar" -> LineItem(35, Some(Map("K1" -> "V1")))), None, checkoutDate = false)
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, None), "bar" -> LineItem(35, Some(Map("K1" -> "V1")))), None, checkoutDate = None)
         )
       )
 
@@ -237,7 +239,7 @@ class CartEntitySpec
 
       result.reply should ===(
         StatusReply.Success(
-          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(22, Some(Map("K2" -> "V2")))), None, checkoutDate = false)
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(22, Some(Map("K2" -> "V2")))), None, checkoutDate = None)
         )
       )
 
@@ -294,8 +296,154 @@ class CartEntitySpec
       result.stateOfType[Option[OpenCart]].get.context shouldBe None
       result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
     }
+    "remove item from cart" in {
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.RemoveLineItem("foo", replyTo)
+      )
 
-    //TODO: Write tests for UpdateLineItem, RemoveLineItem, CompleteCart
+      result.reply should ===(
+        StatusReply.Success(
+          Replies.Summary("C1", "R1", "SC-1", "US", Map.empty, None, checkoutDate = None)
+        )
+      )
+
+      result.event should ===(Events.LineItemRemoved(cartId, "foo"))
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map.empty
+    }
+    "reply with error when attempting to remove an item that doesn't exist" in {
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.RemoveLineItem("bar", replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("Item \"bar\" does not exist in the cart")
+      )
+
+      result.hasNoEvents shouldBe true
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
+    }
+    "check out cart" in {
+      val checkoutDateTime = Instant.now()
+
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CheckoutCart(checkoutDateTime, replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Success(
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, None)), None, Some(checkoutDateTime))
+        )
+      )
+
+      result.event should ===(Events.CheckedOut(cartId, checkoutDateTime))
+
+      result.stateOfType[Option[CheckedOutCart]].isDefined shouldBe true
+      result.stateOfType[Option[CheckedOutCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[CheckedOutCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[CheckedOutCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[CheckedOutCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[CheckedOutCart]].get.checkoutDate shouldBe checkoutDateTime
+      result.stateOfType[Option[CheckedOutCart]].get.context shouldBe None
+      result.stateOfType[Option[CheckedOutCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
+    }
+    "reply with error when attempting check out an empty cart" in {
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.RemoveLineItem("foo", _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.CheckoutCart(Instant.now(), replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("Cannot checkout an empty shopping cart")
+      )
+
+      result.hasNoEvents shouldBe true
+
+      result.stateOfType[Option[OpenCart]].isDefined shouldBe true
+      result.stateOfType[Option[OpenCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[OpenCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[OpenCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[OpenCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[OpenCart]].get.checkoutDate shouldBe None
+      result.stateOfType[Option[OpenCart]].get.context shouldBe None
+      result.stateOfType[Option[OpenCart]].get.lineItems shouldBe Map.empty
+    }
+    "retrieve cart details from an open cart" in {
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.Get(replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Success(
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, None)), None, checkoutDate = None)
+        )
+      )
+
+      result.hasNoEvents shouldBe true
+    }
+  }
+
+  "A checked out cart" should {
+    "retrieve cart details from a checked out cart" in {
+      val checkoutDateTime = Instant.now()
+
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CheckoutCart(checkoutDateTime, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.Get(replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Success(
+          Replies.Summary("C1", "R1", "SC-1", "US", Map("foo" -> LineItem(42, None)), None, Some(checkoutDateTime))
+        )
+      )
+
+      result.hasNoEvents shouldBe true
+    }
+    "reply with an error if a mutation command is sent" in {
+      val checkoutDateTime = Instant.now()
+
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CreateCart("C1", "R1", "SC-1", "US", Map("foo" -> 42), None, None, _))
+      eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](Commands.CheckoutCart(checkoutDateTime, _))
+      val result = eventSourcedTestKit.runCommand[StatusReply[Replies.Summary]](
+        replyTo => Commands.RemoveLineItem("foo", replyTo)
+      )
+
+      result.reply should ===(
+        StatusReply.Error("Cart is completed.  No longer accepting any new commands.")
+      )
+
+      result.hasNoEvents shouldBe true
+      result.stateOfType[Option[CheckedOutCart]].isDefined shouldBe true
+      result.stateOfType[Option[CheckedOutCart]].get.customerId shouldBe "C1"
+      result.stateOfType[Option[CheckedOutCart]].get.regionId shouldBe "R1"
+      result.stateOfType[Option[CheckedOutCart]].get.salesChannelId shouldBe "SC-1"
+      result.stateOfType[Option[CheckedOutCart]].get.countryCode shouldBe "US"
+      result.stateOfType[Option[CheckedOutCart]].get.checkoutDate shouldBe checkoutDateTime
+      result.stateOfType[Option[CheckedOutCart]].get.context shouldBe None
+      result.stateOfType[Option[CheckedOutCart]].get.lineItems shouldBe Map("foo" -> LineItem(42, None))
+    }
   }
 
 }

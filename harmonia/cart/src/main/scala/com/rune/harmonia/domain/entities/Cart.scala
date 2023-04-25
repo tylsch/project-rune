@@ -1,5 +1,6 @@
 package com.rune.harmonia.domain.entities
 
+import com.rune.harmonia.app.cart.Replies.Summary
 import com.rune.harmonia.domain.CborSerializable
 
 import java.time.Instant
@@ -29,9 +30,27 @@ object Cart {
         case _ => copy(lineItems = lineItems + (variantId -> LineItem(quantity, metadata)))
       }
     }
+
+    def removeItem(variantId: String): State =
+      copy(lineItems = lineItems.removed(variantId))
+
+    def isEmpty: Boolean =
+      lineItems.isEmpty
+
+    def toSummary: Summary =
+      Summary(customerId, regionId, salesChannelId, countryCode, lineItems, context, checkoutDate)
   }
 
-  final case class CompletedCart(items: Map[String, Int], checkoutDate: Option[Instant]) extends State {
+  final case class CheckedOutCart(
+                                  customerId: String,
+                                  regionId: String,
+                                  salesChannelId: String,
+                                  countryCode: String,
+                                  lineItems: Map[String, LineItem],
+                                  context: Context,
+                                  checkoutDate: Instant) extends State {
 
+    def toSummary: Summary =
+      Summary(customerId, regionId, salesChannelId, countryCode, lineItems, context, Some(checkoutDate))
   }
 }

@@ -8,8 +8,12 @@ import com.rune.harmonia.app.cart.Replies._
 import com.rune.harmonia.domain.CborSerializable
 import com.rune.harmonia.domain.entities.Cart._
 
+import java.time.Instant
+
 object Commands {
-  sealed trait Command extends CborSerializable
+  sealed trait Command extends CborSerializable {
+    def replyTo: ActorRef[StatusReply[Summary]]
+  }
 
   /** Command to create a cart within a given region and sales channel.
   *
@@ -53,13 +57,15 @@ object Commands {
 
   final case class RemoveLineItem(variantId: String, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
-  final case class CompleteCart(replyTo: ActorRef[StatusReply[Summary]]) extends Command
+  final case class CheckoutCart(checkoutDate: Instant, replyTo: ActorRef[StatusReply[Summary]]) extends Command
+
+  final case class Get(replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   def handleCommand(cartId: String, state: Option[State], cmd: Command): ReplyEffect[Event, Option[State]] = {
     state match {
       case None => handleInitialCommand(cartId, cmd)
       case Some(openCart: OpenCart) => handleOpenCartCommand(cartId, openCart, cmd)
-      case Some(completedCart: CompletedCart) => handleCompletedCartCommand(cartId, completedCart, cmd)
+      case Some(checkedOutCart: CheckedOutCart) => handleCompletedCartCommand(checkedOutCart, cmd)
     }
   }
 
@@ -83,27 +89,20 @@ object Commands {
           Effect
             .persist(CartCreated(cartId, customerId, regionId, salesChannelId, countryCode, items, itemsMetadata, context))
             .thenReply(replyTo) {
-              case Some(OpenCart(customerId, regionId, salesChannelId, countryCode, lineItems, context, checkoutDate)) =>
-                StatusReply.Success(Summary(customerId, regionId, salesChannelId, countryCode, lineItems, context, checkoutDate.isDefined))
+              case Some(openCart: OpenCart) =>
+                StatusReply.Success(openCart.toSummary)
 
             }
-      case AddLineItem(_, _, _, replyTo) =>
-        unSupportedCommandReply(replyTo)
-      case UpdateLineItem(_, _, _, replyTo) =>
-        unSupportedCommandReply(replyTo)
-      case RemoveLineItem(_, replyTo) =>
-        unSupportedCommandReply(replyTo)
-      case CompleteCart(replyTo) =>
-        unSupportedCommandReply(replyTo)
+      case _ => unSupportedCommandReply(cmd.replyTo)
     }
   }
-
-  // TODO: Implement UpdateLineItem, RemoveLineItem, and CompleteCart Commands
 
   private def handleOpenCartCommand(cartId: String, state: OpenCart, cmd:Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
       case CreateCart(_, _, _, _, _, _, _, replyTo) =>
         unSupportedCommandReply(replyTo)
+      case Get(replyTo) =>
+        Effect.reply(replyTo)(StatusReply.Success(state.toSummary))
       case AddLineItem(variantId, quantity, metadata, replyTo) =>
         if (state.hasItem(variantId))
           Effect
@@ -120,7 +119,7 @@ object Commands {
             .persist(LineItemAdded(cartId, variantId, quantity, metadata))
             .thenReply(replyTo) {
               case Some(openCart: OpenCart) =>
-                StatusReply.Success(Summary(openCart.customerId, openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, openCart.checkoutDate.isDefined))
+                StatusReply.Success(openCart.toSummary)
             }
       case UpdateLineItem(variantId, quantity, metadata, replyTo) =>
         if (!state.hasItem(variantId))
@@ -138,27 +137,41 @@ object Commands {
             .persist(LineItemUpdated(cartId, variantId, quantity, metadata))
             .thenReply(replyTo) {
               case Some(openCart: OpenCart) =>
-                StatusReply.Success(Summary(openCart.customerId, openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, openCart.checkoutDate.isDefined))
+                StatusReply.Success(openCart.toSummary)
             }
-      case RemoveLineItem(_, replyTo) =>
-        unSupportedCommandReply(replyTo)
-      case CompleteCart(replyTo) =>
-        unSupportedCommandReply(replyTo)
+      case RemoveLineItem(variantId, replyTo) =>
+        if (!state.hasItem(variantId))
+          Effect
+            .reply(replyTo)(
+              StatusReply.Error(s"Item \"$variantId\" does not exist in the cart")
+            )
+        else
+          Effect
+            .persist(LineItemRemoved(cartId, variantId))
+            .thenReply(replyTo) {
+              case Some(openCart: OpenCart) =>
+                StatusReply.Success(openCart.toSummary)
+            }
+      case CheckoutCart(checkoutDate, replyTo) =>
+        if (state.isEmpty)
+          Effect
+            .reply(replyTo)(
+              StatusReply.Error("Cannot checkout an empty shopping cart")
+            )
+        else
+          Effect.persist(CheckedOut(cartId, checkoutDate))
+          .thenReply(replyTo) {
+            case Some(checkedOutCart: CheckedOutCart) =>
+              StatusReply.Success(checkedOutCart.toSummary)
+          }
     }
   }
 
-  private def handleCompletedCartCommand(cartId: String, state: CompletedCart, cmd: Command): ReplyEffect[Event, Option[State]] = {
+  private def handleCompletedCartCommand(state: CheckedOutCart, cmd: Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
-      case CreateCart(_, _, _, _, _, _, _, replyTo) =>
-        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
-      case AddLineItem(_, _, _, replyTo) =>
-        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
-      case UpdateLineItem(_, _, _, replyTo) =>
-        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
-      case RemoveLineItem(_, replyTo) =>
-        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
-      case CompleteCart(replyTo) =>
-        Effect.reply(replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands"))
+      case Get(replyTo) =>
+        Effect.reply(replyTo)(StatusReply.Success(state.toSummary))
+      case _ => Effect.reply(cmd.replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands."))
     }
   }
 }
