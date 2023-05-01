@@ -70,21 +70,24 @@ object Commands {
   }
 
   private def unSupportedCommandReply(replyTo: ActorRef[StatusReply[Summary]]): ReplyEffect[Event, Option[State]] =
-    Effect.reply(replyTo)(StatusReply.Error("Command not supported in current state"))
+    errorReply("Command not supported in current state", replyTo)
+
+  private def errorReply(msg: String, replyTo: ActorRef[StatusReply[Summary]]): ReplyEffect[Event, Option[State]] =
+    Effect.reply(replyTo)(StatusReply.Error(msg))
 
   private def handleInitialCommand(cartId: String, cmd: Command): ReplyEffect[Event, Option[State]] = {
     cmd match {
       case CreateCart(customerId, regionId, salesChannelId, countryCode, items, itemsMetadata, context, replyTo) =>
         if (customerId.isEmpty)
-          Effect.reply(replyTo)(StatusReply.Error("customerId must be set for cart"))
+          errorReply("customerId must be set for cart", replyTo)
         else if (regionId.isEmpty)
-          Effect.reply(replyTo)(StatusReply.Error("regionId must be set for cart"))
+          errorReply("regionId must be set for cart", replyTo)
         else if (salesChannelId.isEmpty)
-          Effect.reply(replyTo)(StatusReply.Error("salesChannelId must be set for cart"))
+          errorReply("salesChannelId must be set for cart", replyTo)
         else if (countryCode.isEmpty)
-          Effect.reply(replyTo)(StatusReply.Error("countryCode must be set for cart"))
+          errorReply("countryCode must be set for cart", replyTo)
         else if (items.exists { case (_, quantity) => quantity <= 0 })
-          Effect.reply(replyTo)(StatusReply.Error("Item was found with zero quantity, all items must have a quantity greater than zero"))
+          errorReply("Item was found with zero quantity, all items must have a quantity greater than zero", replyTo)
         else
           Effect
             .persist(CartCreated(cartId, customerId, regionId, salesChannelId, countryCode, items, itemsMetadata, context))
@@ -105,15 +108,9 @@ object Commands {
         Effect.reply(replyTo)(StatusReply.Success(state.toSummary))
       case AddLineItem(variantId, quantity, metadata, replyTo) =>
         if (state.hasItem(variantId))
-          Effect
-            .reply(replyTo)(
-              StatusReply.Error(s"Item \"$variantId\" was already added to this shopping cart")
-            )
+          errorReply(s"Item \"$variantId\" was already added to this shopping cart", replyTo)
         else if (quantity <= 0)
-          Effect
-            .reply(replyTo)(
-              StatusReply.Error("Quantity must be greater than zero")
-            )
+          errorReply("Quantity must be greater than zero", replyTo)
         else
           Effect
             .persist(LineItemAdded(cartId, variantId, quantity, metadata))
@@ -123,15 +120,9 @@ object Commands {
             }
       case UpdateLineItem(variantId, quantity, metadata, replyTo) =>
         if (!state.hasItem(variantId))
-          Effect
-            .reply(replyTo)(
-              StatusReply.Error(s"Item \"$variantId\" does not exist in the cart")
-            )
+          errorReply(s"Item \"$variantId\" does not exist in the cart", replyTo)
         else if (quantity <= 0)
-          Effect
-            .reply(replyTo)(
-              StatusReply.Error("Quantity must be greater than zero")
-            )
+          errorReply("Quantity must be greater than zero", replyTo)
         else
           Effect
             .persist(LineItemUpdated(cartId, variantId, quantity, metadata))
@@ -141,10 +132,7 @@ object Commands {
             }
       case RemoveLineItem(variantId, replyTo) =>
         if (!state.hasItem(variantId))
-          Effect
-            .reply(replyTo)(
-              StatusReply.Error(s"Item \"$variantId\" does not exist in the cart")
-            )
+          errorReply(s"Item \"$variantId\" does not exist in the cart", replyTo)
         else
           Effect
             .persist(LineItemRemoved(cartId, variantId))
@@ -154,10 +142,7 @@ object Commands {
             }
       case CheckoutCart(checkoutDate, replyTo) =>
         if (state.isEmpty)
-          Effect
-            .reply(replyTo)(
-              StatusReply.Error("Cannot checkout an empty shopping cart")
-            )
+          errorReply("Cannot checkout an empty shopping cart", replyTo)
         else
           Effect.persist(CheckedOut(cartId, checkoutDate))
           .thenReply(replyTo) {
@@ -171,7 +156,7 @@ object Commands {
     cmd match {
       case Get(replyTo) =>
         Effect.reply(replyTo)(StatusReply.Success(state.toSummary))
-      case _ => Effect.reply(cmd.replyTo)(StatusReply.Error("Cart is completed.  No longer accepting any new commands."))
+      case _ => errorReply("Cart is completed.  No longer accepting any new commands.", cmd.replyTo)
     }
   }
 }
