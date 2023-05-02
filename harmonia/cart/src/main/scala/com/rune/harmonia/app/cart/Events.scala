@@ -49,7 +49,8 @@ object Events {
           case LineItemAdded(_, variantId, quantity, metadata) => Some(openCart.updateItem(variantId, quantity, metadata))
           case LineItemUpdated(_, variantId, quantity, metadata) => Some(openCart.updateItem(variantId, quantity, metadata))
           case LineItemRemoved(_, variantId) => Some(openCart.removeItem(variantId))
-          case CheckedOut(_, checkoutDate) => Some(CheckedOutCart(openCart.customerId, openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, checkoutDate))
+          case CheckedOut(_, checkoutDate) =>
+            Some(CheckedOutCart(openCart.customerId, openCart.regionId, openCart.salesChannelId, openCart.countryCode, openCart.lineItems, openCart.context, checkoutDate))
           case _ => throw new IllegalStateException(s"Invalid event [$evt] in state [OpenCart]")
         }
 
