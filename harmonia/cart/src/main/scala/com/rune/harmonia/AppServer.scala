@@ -11,7 +11,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 object AppServer {
-  // TODO: Build out Server Implementation and create IntegrationSpec using Test-Containers
 
   def start(interface: String, port: Int, system: ActorSystem[_], grpcService: HarmoniaCartService): Unit = {
     implicit val sys: ActorSystem[_] = system

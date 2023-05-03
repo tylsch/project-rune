@@ -1,9 +1,9 @@
 import akka.grpc.sbt.AkkaGrpcPlugin
-import com.typesafe.sbt.packager.Keys._
+import com.typesafe.sbt.packager.Keys.*
 import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
 import com.typesafe.sbt.packager.docker.DockerPlugin
-import sbt.Keys._
-import sbt._
+import sbt.Keys.*
+import sbt.*
 import sbtdynver.DynVerPlugin.autoImport.dynverSeparator
 
 object AkkaAppDependencies {
@@ -19,10 +19,12 @@ object AkkaAppDependencies {
   def appModule(moduleName: String, fileName: String): Project =
     Project(moduleName, file(fileName))
       .enablePlugins(AkkaGrpcPlugin, JavaAppPackaging, DockerPlugin)
+      .configs(IntegrationTest)
       .settings(
         name := moduleName,
         scalaVersion := "2.13.10",
         version := "0.1.0-SNAPSHOT",
+        Defaults.itSettings,
         dockerBaseImage := "docker.io/library/adoptopenjdk:17-jre-hotspot",
         dockerUsername := sys.props.get("docker.username"),
         dockerRepository := sys.props.get("docker.registry"),
@@ -49,8 +51,8 @@ object AkkaAppDependencies {
           "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
           "com.typesafe.akka" %% "akka-cluster-typed" % AkkaVersion,
           "com.typesafe.akka" %% "akka-cluster-sharding-typed" % AkkaVersion,
-          "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
-          "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test,
+          "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % "test,it",
+          "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % "test,it",
           // Akka Management powers Health Checks and Akka Cluster Bootstrapping
           "com.lightbend.akka.management" %% "akka-management" % AkkaManagementVersion,
           "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
@@ -62,20 +64,20 @@ object AkkaAppDependencies {
           // Common dependencies for logging and testing
           "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion,
           "ch.qos.logback" % "logback-classic" % "1.4.6",
-          "org.scalatest" %% "scalatest" % "3.2.15" % Test,
+          "org.scalatest" %% "scalatest" % "3.2.15" % "test,it",
           // 2. Using gRPC and/or protobuf
           "com.typesafe.akka" %% "akka-http2-support" % AkkaHttpVersion,
           // 3. Using Akka Persistence
           "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
           "com.typesafe.akka" %% "akka-serialization-jackson" % AkkaVersion,
           "com.lightbend.akka" %% "akka-persistence-r2dbc" % AkkaPersistenceR2dbcVersion,
-          "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion % Test,
+          "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion % "test,it",
           // 4. Querying and publishing data from Akka Persistence
           "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion,
           "com.lightbend.akka" %% "akka-projection-r2dbc" % AkkaPersistenceR2dbcVersion,
           "com.lightbend.akka" %% "akka-projection-grpc" % AkkaProjectionVersion,
           "com.lightbend.akka" %% "akka-projection-eventsourced" % AkkaProjectionVersion,
-          "com.lightbend.akka" %% "akka-projection-testkit" % AkkaProjectionVersion % Test)
+          "com.lightbend.akka" %% "akka-projection-testkit" % AkkaProjectionVersion % "test,it")
       )
 
 }
