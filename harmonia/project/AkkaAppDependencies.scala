@@ -40,6 +40,7 @@ object AkkaAppDependencies {
         Test / parallelExecution := false,
         Test / testOptions += Tests.Argument("-oDF"),
         Test / logBuffered := false,
+        IntegrationTest / fork := true,
         run / fork := true,
         run / javaOptions ++= sys.props
           .get("config.resource")
@@ -65,14 +66,15 @@ object AkkaAppDependencies {
           "com.typesafe.akka" %% "akka-slf4j" % AkkaVersion,
           "ch.qos.logback" % "logback-classic" % "1.4.6",
           "org.scalatest" %% "scalatest" % "3.2.15" % "test,it",
-          // 2. Using gRPC and/or protobuf
+          "com.dimafeng" %% "testcontainers-scala-scalatest" % "0.40.15" % "it",
+          // Using gRPC and/or protobuf
           "com.typesafe.akka" %% "akka-http2-support" % AkkaHttpVersion,
-          // 3. Using Akka Persistence
+          // Using Akka Persistence
           "com.typesafe.akka" %% "akka-persistence-typed" % AkkaVersion,
           "com.typesafe.akka" %% "akka-serialization-jackson" % AkkaVersion,
           "com.lightbend.akka" %% "akka-persistence-r2dbc" % AkkaPersistenceR2dbcVersion,
           "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion % "test,it",
-          // 4. Querying and publishing data from Akka Persistence
+          // Querying and publishing data from Akka Persistence
           "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion,
           "com.lightbend.akka" %% "akka-projection-r2dbc" % AkkaPersistenceR2dbcVersion,
           "com.lightbend.akka" %% "akka-projection-grpc" % AkkaProjectionVersion,

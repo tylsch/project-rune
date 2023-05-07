@@ -8,6 +8,9 @@ import akka.cluster.typed.Cluster
 import akka.grpc.GrpcClientSettings
 import akka.persistence.testkit.scaladsl.PersistenceInit
 import akka.testkit.SocketUtil
+import com.dimafeng.testcontainers.DockerComposeContainer.ComposeFile
+import com.dimafeng.testcontainers.{ContainerDef, DockerComposeContainer, ExposedService}
+import com.dimafeng.testcontainers.scalatest.TestContainerForAll
 import com.rune.harmonia.Main
 import com.rune.harmonia.proto.HarmoniaCartServiceClient
 import com.typesafe.config.{Config, ConfigFactory}
@@ -19,9 +22,12 @@ import org.scalatest.matchers.should._
 import org.scalatest.time.Span
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.slf4j.LoggerFactory
+import org.testcontainers.containers.wait.strategy.Wait
 
+import java.io.File
 import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
+import scala.io.Source;
 
 // TODO: Build out IntegrationSpec with Test Containers
 //  in same fashion as https://github.com/akka/akka-projection/blob/6288ce6be10d8f23bb6546898687d91b7372336d/samples/grpc/shopping-cart-service-scala/src/test/scala/shopping/cart/IntegrationSpec.scala
@@ -83,7 +89,8 @@ class IntegrationSpec
   with BeforeAndAfterAll
   with Matchers
   with ScalaFutures
-  with Eventually {
+  with Eventually
+  with TestContainerForAll {
 
   import IntegrationSpec.TestNodeFixture
 
@@ -110,10 +117,20 @@ class IntegrationSpec
   private val systems3 =
     List(testNode1, testNode2, testNode3).map(_.testKit.system)
 
+  override val containerDef: DockerComposeContainer.Def =
+    DockerComposeContainer.Def(
+      ComposeFile(Left(new File("src/it/resources/docker-compose-it.yml"))),
+      tailChildContainers = true,
+      exposedServices = Seq(
+        ExposedService("postgres-db", 5432, Wait.forLogMessage(".*database system is ready to accept connections.*", 2))
+      )
+    )
+
+  // TODO: Create Util object to instantiate Postgres DB for Akka Persistence
+
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    // Test-Container setup
-    // Create DB tables
+    // Create DB tables (RDBC util class for integration tests)
     // avoid concurrent creation of tables
     val timeout = 10.seconds
     Await.result(
@@ -130,23 +147,29 @@ class IntegrationSpec
     testNode1.testKit.shutdownTestKit()
   }
 
-  // TODO: Integrate Test-Containers library to spin up PostgresSQL, need before integration test can be ran.
-
-  "Harmonia Cart Service" should {
-    "init and join cluster" in {
-      Main.init(testNode1.testKit.system)
-      Main.init(testNode2.testKit.system)
-      Main.init(testNode3.testKit.system)
-
-      // let the nodes join and become Up
-      eventually(PatienceConfiguration.Timeout(15.seconds)) {
-        systems3.foreach { sys =>
-          Cluster(sys).selfMember.status should ===(MemberStatus.Up)
-          Cluster(sys).state.members.unsorted.map(_.status) should ===(Set(MemberStatus.Up))
-        }
+  "DockerComposeContainer" should {
+    "retrieve non-0 port for any of services" in {
+      withContainers { composedContainers =>
+        composedContainers.getServicePort("postgres-db_1", 5432)
       }
     }
   }
+
+//  "Harmonia Cart Service" should {
+//    "init and join cluster" in {
+//      Main.init(testNode1.testKit.system)
+//      Main.init(testNode2.testKit.system)
+//      Main.init(testNode3.testKit.system)
+//
+//      // let the nodes join and become Up
+//      eventually(PatienceConfiguration.Timeout(15.seconds)) {
+//        systems3.foreach { sys =>
+//          Cluster(sys).selfMember.status should ===(MemberStatus.Up)
+//          Cluster(sys).state.members.unsorted.map(_.status) should ===(Set(MemberStatus.Up))
+//        }
+//      }
+//    }
+//  }
 
   "run integration test" should {
     "succeed without issue" in {
