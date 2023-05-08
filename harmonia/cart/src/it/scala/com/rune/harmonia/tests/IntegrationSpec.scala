@@ -97,25 +97,25 @@ class IntegrationSpec
   private val logger =
     LoggerFactory.getLogger(classOf[IntegrationSpec])
 
-  implicit private val patience: PatienceConfig =
-    PatienceConfig(10.seconds, Span(100, org.scalatest.time.Millis))
-
-  private val (grpcPorts, managementPorts) =
-    SocketUtil
-      .temporaryServerAddresses(6, "127.0.0.1")
-      .map(_.getPort)
-      .splitAt(3)
+//  implicit private val patience: PatienceConfig =
+//    PatienceConfig(10.seconds, Span(100, org.scalatest.time.Millis))
+//
+//  private val (grpcPorts, managementPorts) =
+//    SocketUtil
+//      .temporaryServerAddresses(6, "127.0.0.1")
+//      .map(_.getPort)
+//      .splitAt(3)
 
   // one TestKit (ActorSystem) per cluster node
-  private val testNode1 =
-    new TestNodeFixture(grpcPorts(0), managementPorts, 0)
-  private val testNode2 =
-    new TestNodeFixture(grpcPorts(1), managementPorts, 1)
-  private val testNode3 =
-    new TestNodeFixture(grpcPorts(2), managementPorts, 2)
-
-  private val systems3 =
-    List(testNode1, testNode2, testNode3).map(_.testKit.system)
+//  private val testNode1 =
+//    new TestNodeFixture(grpcPorts(0), managementPorts, 0)
+//  private val testNode2 =
+//    new TestNodeFixture(grpcPorts(1), managementPorts, 1)
+//  private val testNode3 =
+//    new TestNodeFixture(grpcPorts(2), managementPorts, 2)
+//
+//  private val systems3 =
+//    List(testNode1, testNode2, testNode3).map(_.testKit.system)
 
   override val containerDef: DockerComposeContainer.Def =
     DockerComposeContainer.Def(
@@ -123,28 +123,29 @@ class IntegrationSpec
       tailChildContainers = true,
       exposedServices = Seq(
         ExposedService("postgres-db", 5432, Wait.forLogMessage(".*database system is ready to accept connections.*", 2))
-      )
+      ),
+      localCompose = true
     )
 
   // TODO: Create Util object to instantiate Postgres DB for Akka Persistence
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    // Create DB tables (RDBC util class for integration tests)
+    // Create DB tables (Execute harmonia-setup.sh command for integration tests)
     // avoid concurrent creation of tables
-    val timeout = 10.seconds
-    Await.result(
-      PersistenceInit.initializeDefaultPlugins(testNode1.system, timeout),
-      timeout)
+//    val timeout = 10.seconds
+//    Await.result(
+//      PersistenceInit.initializeDefaultPlugins(testNode1.system, timeout),
+//      timeout)
   }
 
   override protected def afterAll(): Unit = {
     super.afterAll()
-    testNode3.testKit.shutdownTestKit()
-    testNode2.testKit.shutdownTestKit()
-    // testNode1 must be the last to shutdown
-    // because responsible to close ScalikeJdbc connections
-    testNode1.testKit.shutdownTestKit()
+//    testNode3.testKit.shutdownTestKit()
+//    testNode2.testKit.shutdownTestKit()
+//    // testNode1 must be the last to shutdown
+//    // because responsible to close ScalikeJdbc connections
+//    testNode1.testKit.shutdownTestKit()
   }
 
   "DockerComposeContainer" should {
