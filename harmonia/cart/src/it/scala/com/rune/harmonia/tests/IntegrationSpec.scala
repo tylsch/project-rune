@@ -3,31 +3,22 @@ package com.rune.harmonia.tests
 import akka.actor.CoordinatedShutdown
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.typed.ActorSystem
-import akka.cluster.MemberStatus
-import akka.cluster.typed.Cluster
 import akka.grpc.GrpcClientSettings
-import akka.persistence.testkit.scaladsl.PersistenceInit
-import akka.testkit.SocketUtil
 import com.dimafeng.testcontainers.DockerComposeContainer.ComposeFile
-import com.dimafeng.testcontainers.{ContainerDef, DockerComposeContainer, ExposedService}
 import com.dimafeng.testcontainers.scalatest.TestContainerForAll
-import com.rune.harmonia.Main
+import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
 import com.rune.harmonia.proto.HarmoniaCartServiceClient
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.Eventually
-import org.scalatest.concurrent.PatienceConfiguration
-import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.matchers.should._
-import org.scalatest.time.Span
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.slf4j.LoggerFactory
 import org.testcontainers.containers.wait.strategy.Wait
 
+import sys.process._
 import java.io.File
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
-import scala.io.Source;
+import scala.language.postfixOps;
 
 // TODO: Build out IntegrationSpec with Test Containers
 //  in same fashion as https://github.com/akka/akka-projection/blob/6288ce6be10d8f23bb6546898687d91b7372336d/samples/grpc/shopping-cart-service-scala/src/test/scala/shopping/cart/IntegrationSpec.scala
@@ -41,13 +32,13 @@ object IntegrationSpec {
                           managementPortIndex: Int): Config =
     ConfigFactory.parseString(
       s"""
-        shopping-cart-service.grpc {
+        harmonia-cart-service.grpc {
           interface = "localhost"
           port = $grpcPort
         }
         akka.management.http.port = ${managementPorts(managementPortIndex)}
         akka.discovery.config.services {
-          "shopping-cart-service" {
+          "harmonia-cart-service" {
             endpoints = [
               {host = "127.0.0.1", port = ${managementPorts(0)}},
               {host = "127.0.0.1", port = ${managementPorts(1)}},
@@ -92,10 +83,10 @@ class IntegrationSpec
   with Eventually
   with TestContainerForAll {
 
-  import IntegrationSpec.TestNodeFixture
-
   private val logger =
     LoggerFactory.getLogger(classOf[IntegrationSpec])
+
+  // TODO: Refactor nodes into a base class spec as a Seq[TestNodeFixture] property that can be set during the beforeAll.
 
 //  implicit private val patience: PatienceConfig =
 //    PatienceConfig(10.seconds, Span(100, org.scalatest.time.Millis))
@@ -127,11 +118,16 @@ class IntegrationSpec
       localCompose = true
     )
 
-  // TODO: Create Util object to instantiate Postgres DB for Akka Persistence
-
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     // Create DB tables (Execute harmonia-setup.sh command for integration tests)
+    // TODO: Refactor Shell Script to pass in name of service running so integration tests can run.
+    withContainers { container =>
+      logger.info(s"Container Name: ${container.getContainerByServiceName("postgres-db").get.getContainerInfo.getName}")
+      logger.info(s"Postgres Url: ${container.getServiceHost("postgres-db", 5432)}:${container.getServicePort("postgres-db", 5432)}")
+    }
+    val result = "../harmonia-setup.sh" lazyLines_!;
+    logger.info(result.mkString("\n"))
     // avoid concurrent creation of tables
 //    val timeout = 10.seconds
 //    Await.result(
@@ -151,7 +147,7 @@ class IntegrationSpec
   "DockerComposeContainer" should {
     "retrieve non-0 port for any of services" in {
       withContainers { composedContainers =>
-        composedContainers.getServicePort("postgres-db_1", 5432)
+        assert(composedContainers.getServicePort("postgres-db", 5432) > 0)
       }
     }
   }
