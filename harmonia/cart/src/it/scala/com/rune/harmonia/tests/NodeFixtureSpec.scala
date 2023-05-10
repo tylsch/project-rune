@@ -4,6 +4,7 @@ import akka.actor.CoordinatedShutdown
 import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.typed.ActorSystem
 import akka.grpc.GrpcClientSettings
+import akka.persistence.testkit.scaladsl.PersistenceInit
 import akka.testkit.SocketUtil
 import com.dimafeng.testcontainers.DockerComposeContainer.ComposeFile
 import com.dimafeng.testcontainers.scalatest.TestContainerForAll
@@ -20,6 +21,7 @@ import org.testcontainers.containers.wait.strategy.Wait
 
 import java.io.File
 import scala.collection.immutable.Seq
+import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 import scala.language.postfixOps
 import scala.sys.process._;
@@ -32,6 +34,7 @@ class TestNodeFixture(
                        grpcPort: Int,
                        managementPorts: Seq[Int],
                        managementPortIndex: Int,
+                       databasePort: Int,
                        configFile: String) {
 
   private val sharedConfig: Config = ConfigFactory.load(configFile)
@@ -39,7 +42,7 @@ class TestNodeFixture(
   val testKit: ActorTestKit =
     ActorTestKit(
       "IntegrationSpec",
-      nodeConfig(grpcPort, managementPorts, managementPortIndex)
+      nodeConfig(grpcPort, managementPorts, managementPortIndex, databasePort)
         .withFallback(sharedConfig)
         .resolve())
 
@@ -61,7 +64,8 @@ class TestNodeFixture(
   private def nodeConfig(
                           grpcPort: Int,
                           managementPorts: Seq[Int],
-                          managementPortIndex: Int): Config = {
+                          managementPortIndex: Int,
+                          databasePort: Int): Config = {
 
     def buildEndpoints(managementPorts: Seq[Int]): String = {
       managementPorts.foldLeft("")((cfg, port) => s"$cfg,{host = \"127.0.0.1\", port = $port}").tail
@@ -80,6 +84,9 @@ class TestNodeFixture(
               ${buildEndpoints(managementPorts)}
             ]
           }
+        }
+        akka.persistence.r2dbc.connection-factory {
+          port = $databasePort
         }
         """)
   }
@@ -100,17 +107,16 @@ abstract class NodeFixtureSpec(numOfNodes: Int, configFile: String)
   implicit private val patience: PatienceConfig =
     PatienceConfig(10.seconds, Span(100, org.scalatest.time.Millis))
 
-//  private val (grpcPorts, managementPorts) =
-//    SocketUtil
-//      .temporaryServerAddresses(numOfNodes * 2, "127.0.0.1")
-//      .map(_.getPort)
-//      .splitAt(numOfNodes)
-//
-//  val nodeFixtures: Seq[TestNodeFixture] =
-//    (1 to numOfNodes)
-//      .map(portIndex => new TestNodeFixture(grpcPorts(portIndex), managementPorts, portIndex, configFile))
-//
-//  val systems3: Seq[ActorSystem[Nothing]] = nodeFixtures.map(_.testKit.system)
+  private val (grpcPorts, managementPorts) =
+    SocketUtil
+      .temporaryServerAddresses(numOfNodes * 2, "127.0.0.1")
+      .map(_.getPort)
+      .splitAt(numOfNodes)
+
+  // TODO: Make private variables and setup similar function as test-containers "withContainers" function
+  var nodeFixtures: Seq[TestNodeFixture] = Seq.empty
+
+  var systems3: Seq[ActorSystem[Nothing]] = Seq.empty
 
   override val containerDef: DockerComposeContainer.Def =
     DockerComposeContainer.Def(
@@ -125,27 +131,33 @@ abstract class NodeFixtureSpec(numOfNodes: Int, configFile: String)
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     // Create DB tables (Execute harmonia-setup.sh command for integration tests)
-    // TODO: Refactor Shell Script to pass in name of service running so integration tests can run.
-    //  Will need confirm shell script can access test containers docker compose.
+    // TODO:
     withContainers { container =>
-      logger.info(s"Container Name: ${container.getContainerByServiceName("postgres-db").get.getContainerInfo.getName}")
-      logger.info(s"Postgres Url: ${container.getServiceHost("postgres-db", 5432)}:${container.getServicePort("postgres-db", 5432)}")
+      val serviceName = container.getContainerByServiceName("postgres-db").get.getContainerInfo.getName
+      val servicePort = container.getServicePort("postgres-db", 5432)
+      val database = "harmonia-cart"
+      val user = "harmonia-admin"
+
+      nodeFixtures = (0 until numOfNodes - 1)
+        .map(portIndex => new TestNodeFixture(grpcPorts(portIndex), managementPorts, portIndex, servicePort, configFile))
+
+      systems3 = nodeFixtures.map(_.testKit.system)
+
+      // TODO Grant same permission level for cart-service-setup file as harmonia-setup file
+      val result = s"./cart-service-setup.sh -s $serviceName -d $database -u $user" lazyLines_!;
+      logger.info(result.mkString("\n"))
     }
-    val result = "../harmonia-setup.sh" lazyLines_!;
-    logger.info(result.mkString("\n"))
+
     // avoid concurrent creation of tables
-    //    val timeout = 10.seconds
-    //    Await.result(
-    //      PersistenceInit.initializeDefaultPlugins(testNode1.system, timeout),
-    //      timeout)
+    val timeout = 10.seconds
+    Await.result(
+      PersistenceInit.initializeDefaultPlugins(nodeFixtures.head.system, timeout),
+      timeout)
   }
 
   override protected def afterAll(): Unit = {
     super.afterAll()
-    //    testNode3.testKit.shutdownTestKit()
-    //    testNode2.testKit.shutdownTestKit()
-    //    // testNode1 must be the last to shutdown
-    //    // because responsible to close ScalikeJdbc connections
-    //    testNode1.testKit.shutdownTestKit()
+    // shutdown nodes in reverse order to properly close connections to database
+    nodeFixtures.reverse.foreach(node => node.testKit.shutdownTestKit())
   }
 }

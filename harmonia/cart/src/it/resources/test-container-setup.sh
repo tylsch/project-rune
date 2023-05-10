@@ -1,7 +1,5 @@
 #!/bin/sh
 
-# TODO Refactor to execute start scripts for all services
-
 while getopts s:d:u:p: option
 do
   case "${option}"

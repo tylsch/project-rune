@@ -1,5 +1,12 @@
 package com.rune.harmonia.tests
 
+import akka.cluster.MemberStatus
+import akka.cluster.typed.Cluster
+import com.rune.harmonia.Main
+import org.scalatest.concurrent.PatienceConfiguration
+
+import scala.concurrent.duration.DurationInt
+
 class IntegrationSpec
   extends NodeFixtureSpec(3, "integration-test.conf") {
 
@@ -11,21 +18,19 @@ class IntegrationSpec
     }
   }
 
-//  "Harmonia Cart Service" should {
-//    "init and join cluster" in {
-//      Main.init(testNode1.testKit.system)
-//      Main.init(testNode2.testKit.system)
-//      Main.init(testNode3.testKit.system)
-//
-//      // let the nodes join and become Up
-//      eventually(PatienceConfiguration.Timeout(15.seconds)) {
-//        systems3.foreach { sys =>
-//          Cluster(sys).selfMember.status should ===(MemberStatus.Up)
-//          Cluster(sys).state.members.unsorted.map(_.status) should ===(Set(MemberStatus.Up))
-//        }
-//      }
-//    }
-//  }
+  "Harmonia Cart Service" should {
+    "init and join cluster" in {
+      nodeFixtures.foreach(node => Main.init(node.testKit.system))
+
+      // let the nodes join and become Up
+      eventually(PatienceConfiguration.Timeout(15.seconds)) {
+        systems3.foreach { sys =>
+          Cluster(sys).selfMember.status should ===(MemberStatus.Up)
+          Cluster(sys).state.members.unsorted.map(_.status) should ===(Set(MemberStatus.Up))
+        }
+      }
+    }
+  }
 
   "run integration test" should {
     "succeed without issue" in {
