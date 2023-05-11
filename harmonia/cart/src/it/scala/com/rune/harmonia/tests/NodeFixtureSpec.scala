@@ -5,7 +5,6 @@ import akka.actor.testkit.typed.scaladsl.ActorTestKit
 import akka.actor.typed.ActorSystem
 import akka.grpc.GrpcClientSettings
 import akka.persistence.testkit.scaladsl.PersistenceInit
-import akka.testkit.SocketUtil
 import com.dimafeng.testcontainers.DockerComposeContainer.ComposeFile
 import com.dimafeng.testcontainers.scalatest.TestContainerForAll
 import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
@@ -84,6 +83,10 @@ class TestNodeFixture(
           port = $canonicalPort
         }
         akka.management.http.port = ${managementPorts(managementPortIndex)}
+        akka.management.cluster.bootstrap.contact-point-discovery {
+          required-contact-point-nr = ${managementPorts.length}
+          contact-with-all-contact-points = true
+        }
         akka.discovery.config.services {
           "harmonia-cart-service" {
             endpoints = [
@@ -99,13 +102,21 @@ class TestNodeFixture(
 
 }
 
-abstract class NodeFixtureSpec(grpcPorts: Seq[Int], managementPorts: Seq[Int], canonicalPorts: Seq[Int], configFile: String)
+abstract class NodeFixtureSpec(grpcPorts: Set[Int], managementPorts: Set[Int], canonicalPorts: Set[Int], configFile: String)
   extends AnyWordSpecLike
     with BeforeAndAfterAll
     with Matchers
     with ScalaFutures
     with Eventually
     with TestContainerForAll {
+
+  require(grpcPorts.nonEmpty && managementPorts.nonEmpty && canonicalPorts.nonEmpty)
+  require(grpcPorts != managementPorts && grpcPorts != canonicalPorts && managementPorts != canonicalPorts)
+  require(configFile.nonEmpty)
+
+  private val grpcPortsSeq = grpcPorts.toSeq
+  private val managementPortsSeq = managementPorts.toSeq
+  private val canonicalPortsSeq = canonicalPorts.toSeq
 
   val logger: Logger =
     LoggerFactory.getLogger(classOf[NodeFixtureSpec])
@@ -119,7 +130,6 @@ abstract class NodeFixtureSpec(grpcPorts: Seq[Int], managementPorts: Seq[Int], c
 //      .map(_.getPort)
 //      .splitAt(numOfNodes)
 
-  // TODO: Make private variables and setup similar function as test-containers "withContainers" function
   private var nodeFixtures: Option[Seq[TestNodeFixture]] = None
 
   private var systems3: Option[Seq[ActorSystem[Nothing]]] = None
@@ -152,8 +162,8 @@ abstract class NodeFixtureSpec(grpcPorts: Seq[Int], managementPorts: Seq[Int], c
       val result = s"./cart-service-setup.sh -s $serviceName -d $database -u $user" lazyLines_!;
       logger.info(result.mkString("\n"))
 
-      nodeFixtures = Some((0 until grpcPorts.length - 1)
-        .map(portIndex => new TestNodeFixture(grpcPorts(portIndex), managementPorts, portIndex, servicePort, canonicalPorts(portIndex), configFile)))
+      nodeFixtures = Some(grpcPortsSeq.indices
+        .map(i => new TestNodeFixture(grpcPortsSeq(i), managementPortsSeq, i, servicePort, canonicalPortsSeq(i), configFile)))
 
       systems3 = Some(nodeFixtures.get.map(_.testKit.system))
     }
