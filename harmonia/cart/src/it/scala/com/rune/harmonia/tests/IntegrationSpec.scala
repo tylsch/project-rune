@@ -3,9 +3,11 @@ package com.rune.harmonia.tests
 import akka.cluster.MemberStatus
 import akka.cluster.typed.Cluster
 import com.rune.harmonia.Main
+import com.rune.harmonia.proto.{ContextPayload, CreateCartRequest, ItemMetadata, ItemMetadataPayload, LineItem}
 import org.scalatest.concurrent.PatienceConfiguration
 
 import scala.concurrent.duration.DurationInt
+import scala.util.{Success, Failure}
 
 class IntegrationSpec
   extends NodeFixtureSpec(Set(8101, 8102, 8103), Set(2551, 2552, 2553), Set(9101, 9102, 9103), "integration-test.conf") {
@@ -30,6 +32,26 @@ class IntegrationSpec
             Cluster(sys).state.members.unsorted.map(_.status) should ===(Set(MemberStatus.Up))
           }
         }
+      }
+    }
+    "create new cart" in {
+      withNodes { (nodeFixtures, _) =>
+        val testNode1 = nodeFixtures.head
+        val response = testNode1.client.createCart(
+          CreateCartRequest("cart-1", "C1", "R1", "SC-1", "US", Map("foo" -> 1),
+            Some(ItemMetadataPayload(Map("foo" -> ItemMetadata(Map("K1" -> "V1"))))), Some(ContextPayload(Map("IP" -> "IP")))))
+        response.onComplete {
+          case Success(newCart) =>
+            newCart.customerId shouldBe "C1"
+            newCart.regionId shouldBe "R1"
+            newCart.salesChannelId shouldBe "SC-1"
+            newCart.countryCode shouldBe "US"
+            newCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))))
+            newCart.context shouldBe Some(ContextPayload(Map("IP" -> "IP")))
+            newCart.checkoutTimestamp shouldBe None
+          case Failure(exception) =>
+            fail(exception)
+        }(testNode1.system.executionContext)
       }
     }
   }
