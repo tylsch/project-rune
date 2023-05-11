@@ -35,6 +35,7 @@ class TestNodeFixture(
                        managementPorts: Seq[Int],
                        managementPortIndex: Int,
                        databasePort: Int,
+                       canonicalPort: Int,
                        configFile: String) {
 
   private val sharedConfig: Config = ConfigFactory.load(configFile)
@@ -42,7 +43,7 @@ class TestNodeFixture(
   val testKit: ActorTestKit =
     ActorTestKit(
       "IntegrationSpec",
-      nodeConfig(grpcPort, managementPorts, managementPortIndex, databasePort)
+      nodeConfig(grpcPort, managementPorts, managementPortIndex, databasePort, canonicalPort)
         .withFallback(sharedConfig)
         .resolve())
 
@@ -65,7 +66,8 @@ class TestNodeFixture(
                           grpcPort: Int,
                           managementPorts: Seq[Int],
                           managementPortIndex: Int,
-                          databasePort: Int): Config = {
+                          databasePort: Int,
+                          canonicalPort: Int): Config = {
 
     def buildEndpoints(managementPorts: Seq[Int]): String = {
       managementPorts.foldLeft("")((cfg, port) => s"$cfg,{host = \"127.0.0.1\", port = $port}").tail
@@ -76,6 +78,10 @@ class TestNodeFixture(
         harmonia-cart-service.grpc {
           interface = "localhost"
           port = $grpcPort
+        }
+        akka.remote.artery.canonical {
+          hostname = "127.0.0.1"
+          port = $canonicalPort
         }
         akka.management.http.port = ${managementPorts(managementPortIndex)}
         akka.discovery.config.services {
@@ -93,7 +99,7 @@ class TestNodeFixture(
 
 }
 
-abstract class NodeFixtureSpec(numOfNodes: Int, configFile: String)
+abstract class NodeFixtureSpec(grpcPorts: Seq[Int], managementPorts: Seq[Int], canonicalPorts: Seq[Int], configFile: String)
   extends AnyWordSpecLike
     with BeforeAndAfterAll
     with Matchers
@@ -107,16 +113,16 @@ abstract class NodeFixtureSpec(numOfNodes: Int, configFile: String)
   implicit private val patience: PatienceConfig =
     PatienceConfig(10.seconds, Span(100, org.scalatest.time.Millis))
 
-  private val (grpcPorts, managementPorts) =
-    SocketUtil
-      .temporaryServerAddresses(numOfNodes * 2, "127.0.0.1")
-      .map(_.getPort)
-      .splitAt(numOfNodes)
+//  private val (grpcPorts, managementPorts) =
+//    SocketUtil
+//      .temporaryServerAddresses(numOfNodes * 2, "127.0.0.1")
+//      .map(_.getPort)
+//      .splitAt(numOfNodes)
 
   // TODO: Make private variables and setup similar function as test-containers "withContainers" function
-  var nodeFixtures: Seq[TestNodeFixture] = Seq.empty
+  private var nodeFixtures: Option[Seq[TestNodeFixture]] = None
 
-  var systems3: Seq[ActorSystem[Nothing]] = Seq.empty
+  private var systems3: Option[Seq[ActorSystem[Nothing]]] = None
 
   override val containerDef: DockerComposeContainer.Def =
     DockerComposeContainer.Def(
@@ -128,36 +134,43 @@ abstract class NodeFixtureSpec(numOfNodes: Int, configFile: String)
       localCompose = true
     )
 
+  def withNodes[A](runTest: (Seq[TestNodeFixture], Seq[ActorSystem[_]]) => A): A = {
+    val nodes = nodeFixtures.getOrElse(throw new IllegalStateException())
+    val system3 = systems3.getOrElse(throw new IllegalStateException())
+    runTest(nodes, system3)
+  }
+
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     // Create DB tables (Execute harmonia-setup.sh command for integration tests)
-    // TODO:
     withContainers { container =>
       val serviceName = container.getContainerByServiceName("postgres-db").get.getContainerInfo.getName
       val servicePort = container.getServicePort("postgres-db", 5432)
-      val database = "harmonia-cart"
+      val database = "harmonia_cart"
       val user = "harmonia-admin"
 
-      nodeFixtures = (0 until numOfNodes - 1)
-        .map(portIndex => new TestNodeFixture(grpcPorts(portIndex), managementPorts, portIndex, servicePort, configFile))
-
-      systems3 = nodeFixtures.map(_.testKit.system)
-
-      // TODO Grant same permission level for cart-service-setup file as harmonia-setup file
       val result = s"./cart-service-setup.sh -s $serviceName -d $database -u $user" lazyLines_!;
       logger.info(result.mkString("\n"))
+
+      nodeFixtures = Some((0 until grpcPorts.length - 1)
+        .map(portIndex => new TestNodeFixture(grpcPorts(portIndex), managementPorts, portIndex, servicePort, canonicalPorts(portIndex), configFile)))
+
+      systems3 = Some(nodeFixtures.get.map(_.testKit.system))
     }
 
     // avoid concurrent creation of tables
     val timeout = 10.seconds
     Await.result(
-      PersistenceInit.initializeDefaultPlugins(nodeFixtures.head.system, timeout),
+      PersistenceInit.initializeDefaultPlugins(nodeFixtures.get.head.system, timeout),
       timeout)
   }
 
   override protected def afterAll(): Unit = {
     super.afterAll()
     // shutdown nodes in reverse order to properly close connections to database
-    nodeFixtures.reverse.foreach(node => node.testKit.shutdownTestKit())
+    nodeFixtures match {
+      case None => logger.info("No nodes to shutdown")
+      case Some(nodes) => nodes.reverse.foreach(node => node.testKit.shutdownTestKit())
+    }
   }
 }

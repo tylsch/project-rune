@@ -10,22 +10,24 @@ do
   esac
 done
 
-if [ -z "$serviceName"]
+if [[ -z "$serviceName" ]];
 then
   serviceName=harmonia-postgres-db-1
 fi
 
-if [ -z "$database"]
+if [[ -z "$database" ]];
 then
   database=harmonia_cart
 fi
 
-if [ -z "$user"]
+if [[ -z "$user" ]];
 then
   user=harmonia-admin
 fi
 
-echo "Service Name : $serviceName";
+echo "Service Name: $serviceName";
+echo "Database: $database";
+echo "user: $user";
 
 # Create PostgreSQL Databases for applications
 docker exec -i $serviceName psql -U $user harmonia -t < sql-scripts/create-db.sql
