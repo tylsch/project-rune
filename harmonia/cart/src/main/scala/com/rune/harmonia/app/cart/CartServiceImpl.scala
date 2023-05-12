@@ -4,7 +4,7 @@ import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
 import akka.util.Timeout
-import com.rune.harmonia.proto.{Cart, ContextPayload, CreateCartRequest, HarmoniaCartService, ItemMetadata, LineItem}
+import com.rune.harmonia.proto.{AddItemRequest, Cart, CheckOutRequest, ContextPayload, CreateCartRequest, GetRequest, HarmoniaCartService, ItemMetadata, LineItem, RemoveItemRequest, UpdateItemRequest}
 import io.grpc.Status
 import org.slf4j.LoggerFactory
 
@@ -84,4 +84,14 @@ class CartServiceImpl(system: ActorSystem[_]) extends HarmoniaCartService {
 
     convertError(reply.map(cart => toProtoCart(cart)))
   }
+
+  override def get(in: GetRequest): Future[Cart] = ???
+
+  override def addItem(in: AddItemRequest): Future[Cart] = ???
+
+  override def updateItem(in: UpdateItemRequest): Future[Cart] = ???
+
+  override def removeItem(in: RemoveItemRequest): Future[Cart] = ???
+
+  override def checkOut(in: CheckOutRequest): Future[Cart] = ???
 }

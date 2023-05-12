@@ -6,7 +6,16 @@ option java_package = "com.rune.harmonia.proto";
 package harmoniacartservice;
 
 service HarmoniaCartService {
+  rpc Get(GetRequest) returns (Cart) {}
   rpc CreateCart(CreateCartRequest) returns (Cart) {}
+  rpc AddItem(AddItemRequest) returns (Cart) {}
+  rpc UpdateItem(UpdateItemRequest) returns (Cart) {}
+  rpc RemoveItem(RemoveItemRequest) returns (Cart) {}
+  rpc CheckOut(CheckOutRequest) returns (Cart) {}
+}
+
+message GetRequest {
+  string cartId = 1;
 }
 
 message CreateCartRequest {
@@ -20,6 +29,30 @@ message CreateCartRequest {
   optional ContextPayload context = 8;
 }
 
+message AddItemRequest {
+  string cartId = 1;
+  string variantId = 2;
+  int32 quantity = 3;
+  optional ItemMetadataPayload itemMetadata = 4;
+}
+
+message UpdateItemRequest {
+  string cartId = 1;
+  string variantId = 2;
+  int32 quantity = 3;
+  optional ItemMetadataPayload itemMetadata = 4;
+}
+
+message RemoveItemRequest {
+  string cartId = 1;
+  string variantId = 2;
+}
+
+message CheckOutRequest {
+  string cartId = 1;
+  int64 checkOutTimestamp = 2;
+}
+
 message Cart {
   string customerId = 1;
   string regionId = 2;
@@ -27,7 +60,7 @@ message Cart {
   string countryCode = 4;
   map<string, LineItem> items = 5;
   optional ContextPayload context = 6;
-  optional int64 checkoutTimestamp = 7;
+  optional int64 checkOutTimestamp = 7;
 }
 
 message ContextPayload {
