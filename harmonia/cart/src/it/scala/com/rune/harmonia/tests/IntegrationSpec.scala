@@ -2,15 +2,20 @@ package com.rune.harmonia.tests
 
 import akka.cluster.MemberStatus
 import akka.cluster.typed.Cluster
+import akka.grpc.GrpcServiceException
 import com.rune.harmonia.Main
 import com.rune.harmonia.proto.{ContextPayload, CreateCartRequest, ItemMetadata, ItemMetadataPayload, LineItem}
 import org.scalatest.concurrent.PatienceConfiguration
+import org.scalatest.time.Span
 
-import scala.concurrent.duration.DurationInt
-import scala.util.{Success, Failure}
+import scala.concurrent.duration._
 
+// TODO: Get IntegrationSpec working in Intellij Test
 class IntegrationSpec
   extends NodeFixtureSpec(Set(8101, 8102, 8103), Set(2551, 2552, 2553), Set(9101, 9102, 9103), "integration-test.conf") {
+
+  implicit private val patience: PatienceConfig =
+    PatienceConfig(10.seconds, Span(100, org.scalatest.time.Millis))
 
   "DockerComposeContainer" should {
     "retrieve non-0 port for any of services" in {
@@ -40,26 +45,28 @@ class IntegrationSpec
         val response = testNode1.client.createCart(
           CreateCartRequest("cart-1", "C1", "R1", "SC-1", "US", Map("foo" -> 1),
             Some(ItemMetadataPayload(Map("foo" -> ItemMetadata(Map("K1" -> "V1"))))), Some(ContextPayload(Map("IP" -> "IP")))))
-        response.onComplete {
-          case Success(newCart) =>
-            newCart.customerId shouldBe "C1"
-            newCart.regionId shouldBe "R1"
-            newCart.salesChannelId shouldBe "SC-1"
-            newCart.countryCode shouldBe "US"
-            newCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))))
-            newCart.context shouldBe Some(ContextPayload(Map("IP" -> "IP")))
-            newCart.checkoutTimestamp shouldBe None
-          case Failure(exception) =>
-            fail(exception)
-        }(testNode1.system.executionContext)
+
+        whenReady(response) { newCart =>
+          newCart.customerId shouldBe "C1"
+          newCart.regionId shouldBe "R1"
+          newCart.salesChannelId shouldBe "SC-1"
+          newCart.countryCode shouldBe "US"
+          newCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))))
+          newCart.context shouldBe Some(ContextPayload(Map("IP" -> "IP")))
+          newCart.checkOutTimestamp shouldBe None
+        }
       }
     }
-  }
+    "throw exception for invalid parameters on cart creation" in {
+      withNodes { (nodeFixtures, _) =>
+        val testNode1 = nodeFixtures.head
+        val response = testNode1.client.createCart(
+          CreateCartRequest("cart-1", "", "R1", "SC-1", "US", Map("foo" -> 1),
+            Some(ItemMetadataPayload(Map("foo" -> ItemMetadata(Map("K1" -> "V1"))))), Some(ContextPayload(Map("IP" -> "IP")))))
 
-  "run integration test" should {
-    "succeed without issue" in {
-      println("Running tests in integration test scope")
-      succeed
+        response.failed.futureValue.isInstanceOf[GrpcServiceException]
+        response.failed.futureValue.getMessage shouldBe "INVALID_ARGUMENT: Command not supported in current state"
+      }
     }
   }
 }

@@ -121,9 +121,6 @@ abstract class NodeFixtureSpec(grpcPorts: Set[Int], managementPorts: Set[Int], c
   val logger: Logger =
     LoggerFactory.getLogger(classOf[NodeFixtureSpec])
 
-  implicit private val patience: PatienceConfig =
-    PatienceConfig(10.seconds, Span(100, org.scalatest.time.Millis))
-
 //  private val (grpcPorts, managementPorts) =
 //    SocketUtil
 //      .temporaryServerAddresses(numOfNodes * 2, "127.0.0.1")
