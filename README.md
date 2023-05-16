@@ -11,9 +11,22 @@ TBD
 ## Project Dunan
 Project based on [GM Direct Parts](https://www.gmpartsdirect.com/) vehicle part list page.
 
-Proposed Technologies
+Proposed Technologies (Solution #1)
 - [Nuxt](https://nuxt.com/) for the frontend application
 - [Primevue](https://primevue.org/) for frontend components
 - [FastAPI](https://fastapi.tiangolo.com/) for backend application
 - [Redis](https://redis.io/docs/stack/) for database
+
+Proposed Technologies (Solution #2)
+- [Laminar](https://laminar.dev/) for the frontend application
+- [Laminar SAP UI5 Web Components](https://github.com/sherpal/LaminarSAPUI5Bindings) for frontend components
+- Cats Effect
+  - [http4s](https://http4s.org/) for backend web server
+  - [doobie](https://tpolecat.github.io/doobie/index.html) JDBC Layer
+- ZIO
+  - [ZIO HTTP](https://zio.dev/zio-http/) or [ZIO gRPC](https://zio.dev/ecosystem/community/zio-grpc) for backend web server
+  - [ZIO JDBC](https://zio.dev/zio-jdbc/) JDBC Layer
+- Database
+  - Postgres with [pgvector extensions](https://github.com/pgvector/pgvector) - Database
+  - [Supabase](https://supabase.com/) with pgvector extension - Database (Use Supabase REST API or GraphQL endpoint instead of JDBC)
 
