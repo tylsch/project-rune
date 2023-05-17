@@ -85,7 +85,12 @@ class CartServiceImpl(system: ActorSystem[_]) extends HarmoniaCartService {
     convertError(reply.map(cart => toProtoCart(cart)))
   }
 
-  override def get(in: GetRequest): Future[Cart] = ???
+  override def get(in: GetRequest): Future[Cart] = {
+    val entityRef = sharding.entityRefFor(CartEntity.EntityKey, in.cartId)
+    val reply = entityRef.askWithStatus(Commands.Get)
+
+    convertError(reply.map(cart => toProtoCart(cart)))
+  }
 
   override def addItem(in: AddItemRequest): Future[Cart] = ???
 

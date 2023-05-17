@@ -4,13 +4,20 @@ import akka.cluster.MemberStatus
 import akka.cluster.typed.Cluster
 import akka.grpc.GrpcServiceException
 import com.rune.harmonia.Main
-import com.rune.harmonia.proto.{ContextPayload, CreateCartRequest, ItemMetadata, ItemMetadataPayload, LineItem}
+import com.rune.harmonia.proto.{ContextPayload, CreateCartRequest, GetRequest, ItemMetadata, ItemMetadataPayload, LineItem}
 import org.scalatest.concurrent.PatienceConfiguration
 import org.scalatest.time.Span
 
 import scala.concurrent.duration._
 
-// TODO: Get IntegrationSpec working in Intellij Test
+/*
+* Proposal to drop IntegrationTest from sbt 2.0
+* https://eed3si9n.com/sbt-drop-custom-config/
+*
+* */
+
+// TODO: Finish Integration Tests for other requests.
+
 class IntegrationSpec
   extends NodeFixtureSpec(Set(8101, 8102, 8103), Set(2551, 2552, 2553), Set(9101, 9102, 9103), "integration-test.conf") {
 
@@ -61,8 +68,17 @@ class IntegrationSpec
       withNodes { (nodeFixtures, _) =>
         val testNode1 = nodeFixtures.head
         val response = testNode1.client.createCart(
-          CreateCartRequest("cart-1", "", "R1", "SC-1", "US", Map("foo" -> 1),
+          CreateCartRequest("cart-2", "", "R1", "SC-1", "US", Map("foo" -> 1),
             Some(ItemMetadataPayload(Map("foo" -> ItemMetadata(Map("K1" -> "V1"))))), Some(ContextPayload(Map("IP" -> "IP")))))
+
+        response.failed.futureValue.isInstanceOf[GrpcServiceException]
+        response.failed.futureValue.getMessage shouldBe "INVALID_ARGUMENT: customerId must be set for cart"
+      }
+    }
+    "throw exception for invalid command" in {
+      withNodes { (nodeFixtures, _) =>
+        val testNode1 = nodeFixtures.head
+        val response = testNode1.client.get(GetRequest("cart-X"))
 
         response.failed.futureValue.isInstanceOf[GrpcServiceException]
         response.failed.futureValue.getMessage shouldBe "INVALID_ARGUMENT: Command not supported in current state"
