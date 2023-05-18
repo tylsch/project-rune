@@ -46,24 +46,6 @@ class IntegrationSpec
         }
       }
     }
-    "create new cart" in {
-      withNodes { (nodeFixtures, _) =>
-        val testNode1 = nodeFixtures.head
-        val response = testNode1.client.createCart(
-          CreateCartRequest("cart-1", "C1", "R1", "SC-1", "US", Map("foo" -> 1),
-            Some(ItemMetadataPayload(Map("foo" -> ItemMetadata(Map("K1" -> "V1"))))), Some(ContextPayload(Map("IP" -> "IP")))))
-
-        whenReady(response) { newCart =>
-          newCart.customerId shouldBe "C1"
-          newCart.regionId shouldBe "R1"
-          newCart.salesChannelId shouldBe "SC-1"
-          newCart.countryCode shouldBe "US"
-          newCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))))
-          newCart.context shouldBe Some(ContextPayload(Map("IP" -> "IP")))
-          newCart.checkOutTimestamp shouldBe None
-        }
-      }
-    }
     "throw exception for invalid parameters on cart creation" in {
       withNodes { (nodeFixtures, _) =>
         val testNode1 = nodeFixtures.head
@@ -83,6 +65,34 @@ class IntegrationSpec
 
         response.failed.futureValue.isInstanceOf[GrpcServiceException]
         response.failed.futureValue.getMessage shouldBe "NOT_FOUND: Cart cart-X not found"
+      }
+    }
+
+    "take cart through lifecycle" in {
+      withNodes { (nodeFixtures, _) =>
+        val testNode1 = nodeFixtures.head
+        val testNode2 = nodeFixtures.tail.head
+        val eventualCart = testNode1.client.createCart(
+          CreateCartRequest("cart-1", "C1", "R1", "SC-1", "US", Map("foo" -> 1),
+            Some(ItemMetadataPayload(Map("foo" -> ItemMetadata(Map("K1" -> "V1"))))), Some(ContextPayload(Map("IP" -> "IP")))))
+
+        whenReady(eventualCart) { newCart =>
+          newCart.customerId shouldBe "C1"
+          newCart.regionId shouldBe "R1"
+          newCart.salesChannelId shouldBe "SC-1"
+          newCart.countryCode shouldBe "US"
+          newCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))))
+          newCart.context shouldBe Some(ContextPayload(Map("IP" -> "IP")))
+          newCart.checkOutTimestamp shouldBe None
+        }
+
+        val addItemResponse = testNode2.client.addItem(
+          AddItemRequest("cart-1", "bar", 45, Some(ItemMetadata(Map("K2" -> "V2"))))
+        )
+
+        whenReady(addItemResponse) { updatedCart =>
+          updatedCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))), "bar" -> LineItem(45, Some(ItemMetadata(Map("K2" -> "V2")))))
+        }
       }
     }
   }

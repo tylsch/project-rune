@@ -33,14 +33,14 @@ message AddItemRequest {
   string cartId = 1;
   string variantId = 2;
   int32 quantity = 3;
-  optional ItemMetadataPayload itemMetadata = 4;
+  optional ItemMetadata itemMetadata = 4;
 }
 
 message UpdateItemRequest {
   string cartId = 1;
   string variantId = 2;
   int32 quantity = 3;
-  optional ItemMetadataPayload itemMetadata = 4;
+  optional ItemMetadata itemMetadata = 4;
 }
 
 message RemoveItemRequest {

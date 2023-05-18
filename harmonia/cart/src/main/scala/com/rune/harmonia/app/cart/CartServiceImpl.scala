@@ -101,7 +101,21 @@ class CartServiceImpl(system: ActorSystem[_]) extends HarmoniaCartService {
     )
   }
 
-  override def addItem(in: AddItemRequest): Future[Cart] = ???
+  override def addItem(in: AddItemRequest): Future[Cart] = {
+    val itemMetadata: Option[Map[String, String]] = {
+      in.itemMetadata match {
+        case None => None
+        case Some(payload) => Some(payload.metadata)
+      }
+    }
+
+    val entityRef = sharding.entityRefFor(CartEntity.EntityKey, in.cartId)
+    val response = entityRef.askWithStatus(
+      Commands.AddLineItem(in.variantId, in.quantity, itemMetadata, _)
+    )
+
+    convertError(response.map(cart => toProtoCart(cart)), None)
+  }
 
   override def updateItem(in: UpdateItemRequest): Future[Cart] = ???
 
