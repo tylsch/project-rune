@@ -4,7 +4,7 @@ import akka.cluster.MemberStatus
 import akka.cluster.typed.Cluster
 import akka.grpc.GrpcServiceException
 import com.rune.harmonia.Main
-import com.rune.harmonia.proto.{ContextPayload, CreateCartRequest, GetRequest, ItemMetadata, ItemMetadataPayload, LineItem}
+import com.rune.harmonia.proto._
 import org.scalatest.concurrent.PatienceConfiguration
 import org.scalatest.time.Span
 
@@ -75,13 +75,14 @@ class IntegrationSpec
         response.failed.futureValue.getMessage shouldBe "INVALID_ARGUMENT: customerId must be set for cart"
       }
     }
-    "throw exception for invalid command" in {
+
+    "throw exception for retrieving cart that does not exist" in {
       withNodes { (nodeFixtures, _) =>
         val testNode1 = nodeFixtures.head
         val response = testNode1.client.get(GetRequest("cart-X"))
 
         response.failed.futureValue.isInstanceOf[GrpcServiceException]
-        response.failed.futureValue.getMessage shouldBe "INVALID_ARGUMENT: Command not supported in current state"
+        response.failed.futureValue.getMessage shouldBe "NOT_FOUND: Cart cart-X not found"
       }
     }
   }

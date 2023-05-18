@@ -47,16 +47,22 @@ class CartServiceImpl(system: ActorSystem[_]) extends HarmoniaCartService {
     Cart(cart.customerId, cart.regionId, cart.salesChannelId, cart.countryCode, lineItems, context, checkoutTimestamp)
   }
 
-  private def convertError[T](response: Future[T]): Future[T] = {
+  private def convertError[T](response: Future[T], overrideFuture: Option[Future[T]]): Future[T] = {
     response.recoverWith {
       case _: TimeoutException =>
         Future.failed(
           new GrpcServiceException(
             Status.UNAVAILABLE.withDescription("Operation timed out")))
       case exc =>
-        Future.failed(
-          new GrpcServiceException(
-            Status.INVALID_ARGUMENT.withDescription(exc.getMessage)))
+        overrideFuture match {
+          case None =>
+            Future.failed(
+              new GrpcServiceException(
+                Status.INVALID_ARGUMENT.withDescription(exc.getMessage)))
+          case Some(errorFuture) =>
+            errorFuture
+        }
+
     }
   }
   override def createCart(in: CreateCartRequest): Future[Cart] = {
@@ -82,14 +88,17 @@ class CartServiceImpl(system: ActorSystem[_]) extends HarmoniaCartService {
       Commands.CreateCart(in.customerId, in.regionId, in.salesChannelId, in.countryCode, in.items, itemMetadata, context, _)
     )
 
-    convertError(reply.map(cart => toProtoCart(cart)))
+    convertError(reply.map(cart => toProtoCart(cart)), None)
   }
 
   override def get(in: GetRequest): Future[Cart] = {
     val entityRef = sharding.entityRefFor(CartEntity.EntityKey, in.cartId)
     val reply = entityRef.askWithStatus(Commands.Get)
 
-    convertError(reply.map(cart => toProtoCart(cart)))
+    convertError(
+      reply.map(cart => toProtoCart(cart)),
+      Some(Future.failed(new GrpcServiceException(Status.NOT_FOUND.withDescription(s"Cart ${in.cartId} not found"))))
+    )
   }
 
   override def addItem(in: AddItemRequest): Future[Cart] = ???
