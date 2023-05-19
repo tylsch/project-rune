@@ -8,6 +8,7 @@ import com.rune.harmonia.proto._
 import org.scalatest.concurrent.PatienceConfiguration
 import org.scalatest.time.Span
 
+import java.time.Instant
 import scala.concurrent.duration._
 
 /*
@@ -89,9 +90,31 @@ class IntegrationSpec
         val addItemResponse = testNode2.client.addItem(
           AddItemRequest("cart-1", "bar", 45, Some(ItemMetadata(Map("K2" -> "V2"))))
         )
-
         whenReady(addItemResponse) { updatedCart =>
           updatedCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))), "bar" -> LineItem(45, Some(ItemMetadata(Map("K2" -> "V2")))))
+        }
+
+        val updateItemResponse = testNode2.client.updateItem(
+          UpdateItemRequest("cart-1", "bar", 25, Some(ItemMetadata(Map("K3" -> "V3"))))
+        )
+        whenReady(updateItemResponse) { updatedCart =>
+          updatedCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))), "bar" -> LineItem(25, Some(ItemMetadata(Map("K3" -> "V3")))))
+        }
+
+        val removeItemResponse = testNode2.client.removeItem(
+          RemoveItemRequest("cart-1", "bar")
+        )
+        whenReady(removeItemResponse) { updatedCart =>
+          updatedCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))))
+        }
+
+        val checkOutTime = Instant.now().getEpochSecond
+        val checkOutResponse = testNode2.client.checkOut(
+          CheckOutRequest("cart-1", checkOutTime)
+        )
+        whenReady(checkOutResponse) { updatedCart =>
+          updatedCart.items shouldBe Map("foo" -> LineItem(1, Some(ItemMetadata(Map("K1" -> "V1")))))
+          updatedCart.checkOutTimestamp shouldBe Some(checkOutTime)
         }
       }
     }

@@ -3,11 +3,13 @@ package com.rune.harmonia.app.cart
 import akka.actor.typed.ActorSystem
 import akka.cluster.sharding.typed.scaladsl.ClusterSharding
 import akka.grpc.GrpcServiceException
+import akka.pattern.StatusReply
 import akka.util.Timeout
 import com.rune.harmonia.proto.{AddItemRequest, Cart, CheckOutRequest, ContextPayload, CreateCartRequest, GetRequest, HarmoniaCartService, ItemMetadata, LineItem, RemoveItemRequest, UpdateItemRequest}
 import io.grpc.Status
 import org.slf4j.LoggerFactory
 
+import java.time.Instant
 import java.util.concurrent.TimeoutException
 import scala.concurrent.Future
 
@@ -41,28 +43,40 @@ class CartServiceImpl(system: ActorSystem[_]) extends HarmoniaCartService {
     val checkoutTimestamp: Option[Long] =
       cart.checkoutDate match {
         case None => None
-        case Some(value) => Some(value.toEpochMilli)
+        case Some(value) => Some(value.getEpochSecond)
       }
 
     Cart(cart.customerId, cart.regionId, cart.salesChannelId, cart.countryCode, lineItems, context, checkoutTimestamp)
   }
 
-  private def convertError[T](response: Future[T], overrideFuture: Option[Future[T]]): Future[T] = {
+  private def convertError[T](response: Future[T], overrideCatchAllFuture: Option[Throwable => Future[T]]): Future[T] = {
     response.recoverWith {
       case _: TimeoutException =>
         Future.failed(
           new GrpcServiceException(
             Status.UNAVAILABLE.withDescription("Operation timed out")))
       case exc =>
-        overrideFuture match {
+        overrideCatchAllFuture match {
           case None =>
             Future.failed(
               new GrpcServiceException(
                 Status.INVALID_ARGUMENT.withDescription(exc.getMessage)))
-          case Some(errorFuture) =>
-            errorFuture
+          case Some(func) =>
+            func(exc)
         }
+    }
+  }
 
+  private def convertError[T](response: Future[T]): Future[T] = {
+    response.recoverWith {
+      case _: TimeoutException =>
+        Future.failed(
+          new GrpcServiceException(
+            Status.UNAVAILABLE.withDescription("Operation timed out")))
+      case exc =>
+        Future.failed(
+          new GrpcServiceException(
+            Status.INVALID_ARGUMENT.withDescription(exc.getMessage)))
     }
   }
   override def createCart(in: CreateCartRequest): Future[Cart] = {
@@ -95,10 +109,22 @@ class CartServiceImpl(system: ActorSystem[_]) extends HarmoniaCartService {
     val entityRef = sharding.entityRefFor(CartEntity.EntityKey, in.cartId)
     val reply = entityRef.askWithStatus(Commands.Get)
 
-    convertError(
-      reply.map(cart => toProtoCart(cart)),
-      Some(Future.failed(new GrpcServiceException(Status.NOT_FOUND.withDescription(s"Cart ${in.cartId} not found"))))
-    )
+    reply
+      .recoverWith {
+        case _: TimeoutException =>
+          Future.failed(
+            new GrpcServiceException(
+              Status.UNAVAILABLE.withDescription("Operation timed out")))
+        case _: StatusReply.ErrorMessage =>
+          Future.failed(
+            new GrpcServiceException(
+              Status.NOT_FOUND.withDescription(s"Cart ${in.cartId} not found")))
+        case exc =>
+          Future.failed(
+            new GrpcServiceException(
+              Status.INVALID_ARGUMENT.withDescription(exc.getMessage)))
+      }
+      .map(cart => toProtoCart(cart))
   }
 
   override def addItem(in: AddItemRequest): Future[Cart] = {
@@ -114,12 +140,40 @@ class CartServiceImpl(system: ActorSystem[_]) extends HarmoniaCartService {
       Commands.AddLineItem(in.variantId, in.quantity, itemMetadata, _)
     )
 
-    convertError(response.map(cart => toProtoCart(cart)), None)
+    convertError(response.map(cart => toProtoCart(cart)))
   }
 
-  override def updateItem(in: UpdateItemRequest): Future[Cart] = ???
+  override def updateItem(in: UpdateItemRequest): Future[Cart] = {
+    val itemMetadata: Option[Map[String, String]] = {
+      in.itemMetadata match {
+        case None => None
+        case Some(payload) => Some(payload.metadata)
+      }
+    }
 
-  override def removeItem(in: RemoveItemRequest): Future[Cart] = ???
+    val entityRef = sharding.entityRefFor(CartEntity.EntityKey, in.cartId)
+    val response = entityRef.askWithStatus(
+      Commands.UpdateLineItem(in.variantId, in.quantity, itemMetadata, _)
+    )
 
-  override def checkOut(in: CheckOutRequest): Future[Cart] = ???
+    convertError(response.map(cart => toProtoCart(cart)))
+  }
+
+  override def removeItem(in: RemoveItemRequest): Future[Cart] = {
+    val entityRef = sharding.entityRefFor(CartEntity.EntityKey, in.cartId)
+    val response = entityRef.askWithStatus(
+      Commands.RemoveLineItem(in.variantId, _)
+    )
+
+    convertError(response.map(cart => toProtoCart(cart)))
+  }
+
+  override def checkOut(in: CheckOutRequest): Future[Cart] = {
+    val entityRef = sharding.entityRefFor(CartEntity.EntityKey, in.cartId)
+    val response = entityRef.askWithStatus(
+      Commands.CheckoutCart(Instant.ofEpochSecond(in.checkOutTimestamp), _)
+    )
+
+    convertError(response.map(cart => toProtoCart(cart)))
+  }
 }
