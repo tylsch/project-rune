@@ -8,6 +8,19 @@ This project is based on the [Implementing Microservices with Akka](Implementing
 - Defines a separate database schema for Akka Persistence tables
 - Project structure inspired by Clean Architecture pattern
 
+## Running Integration Tests
+### Prerequisites
+1. Ensure that latest version Exchange Library is published locally (See Publish Exchange Library to "Local" Ivy Repository section below).
+2. Clean and compile services via sbt
+   ```
+   sbt harmonia-cart/clean
+   sbt harmonia-cart/compile
+   ```
+3. Use sbt IntegrationTest command to run tests
+   ```
+   sbt harmonia-cart/IntegrationTest/test
+   ```
+
 ## Running the sample code
 
 ### Database Setup
@@ -18,8 +31,10 @@ docker-compose up -d
 ```
 Create the PostgresSQL tables from the SQL script located inside the ddl-scripts at the root of the project:
 ```shell
-docker exec -i {TBD} psql -U harmonia-admin harmonia -t < ddl-scripts/create_tables.sql
+./harmonia-setup.sh
 ```
+**Note**
+Ensure you have the correct permissions granted to run setup script.
 
 ### Publish Exchange Library to "Local" Ivy Repository
 Execute the following command to compile and publish exchange module (contains all .proto files)
@@ -47,9 +62,9 @@ sbt exchange/publishLocal
     curl http://localhost:9101/ready
     ```
 
+
+
 ## TODO Items
-1. Model cart aggregate service around Medusa.js
-2. Create CartEntityPersistenceSpec using Persistence TestKit (https://doc.akka.io/docs/akka/current/typed/persistence-testing.html)
-3. Create Akka Projection for cart service to produce multi-event topic to Redpanda
-4. Model region aggregate service around Medusa.js
-5. Create ZIO App based on Medusa.js checkout processing using zio-temporal & Temporal
+1. Create Akka Projection for cart service to produce multi-event topic to Redpanda
+2. Create ZIO App based on Medusa.js checkout processing using zio-temporal & Temporal
+3. Create Region aggregate service modeled around Medusa.js region implementation
