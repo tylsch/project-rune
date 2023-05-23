@@ -8,12 +8,12 @@ import sbtdynver.DynVerPlugin.autoImport.dynverSeparator
 
 object AkkaAppDependencies {
 
-  val AkkaVersion = "2.8.0"
-  val AkkaHttpVersion = "10.5.0"
-  val AkkaManagementVersion = "1.2.0"
-  val AkkaPersistenceR2dbcVersion = "1.0.1"
-  val AlpakkaKafkaVersion = "4.0.0"
-  val AkkaProjectionVersion = "1.3.1"
+  val AkkaVersion = "2.8.2"
+  val AkkaHttpVersion = "10.5.2"
+  val AkkaManagementVersion = "1.4.0"
+  val AkkaPersistenceR2dbcVersion = "1.1.0"
+  val AlpakkaKafkaVersion = "4.0.2"
+  val AkkaProjectionVersion = "1.4.0"
   val AkkaDiagnosticsVersion = "2.0.0"
 
   def appModule(moduleName: String, fileName: String): Project =
@@ -76,8 +76,8 @@ object AkkaAppDependencies {
           "com.typesafe.akka" %% "akka-persistence-testkit" % AkkaVersion % "test,it",
           // Querying and publishing data from Akka Persistence
           "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion,
-          "com.lightbend.akka" %% "akka-projection-r2dbc" % AkkaPersistenceR2dbcVersion,
-          "com.lightbend.akka" %% "akka-projection-grpc" % AkkaProjectionVersion,
+          "com.lightbend.akka" %% "akka-projection-r2dbc" % AkkaProjectionVersion,
+          //"com.lightbend.akka" %% "akka-projection-grpc" % AkkaProjectionVersion,
           "com.lightbend.akka" %% "akka-projection-eventsourced" % AkkaProjectionVersion,
           "com.lightbend.akka" %% "akka-projection-testkit" % AkkaProjectionVersion % "test,it")
       )
