@@ -28,6 +28,12 @@ object CartEntity {
         commandHandler = (state, cmd) => handleCommand(cartId, state, cmd),
         eventHandler = (state, evt) => handleEvent(state, evt)
       )
+      .withTaggerForState{ case (state, _) =>
+         state match {
+           case None => throw new IllegalStateException("Can't tag an empty cart")
+           case Some(cart) => cart.tags
+         }
+      }
       .withRetention(RetentionCriteria.snapshotEvery(numberOfEvents = 100, keepNSnapshots = 3))
       .onPersistFailure(SupervisorStrategy.restartWithBackoff(minBackoff = 10.millis, maxBackoff = 5.seconds, randomFactor = 0.1))
   }

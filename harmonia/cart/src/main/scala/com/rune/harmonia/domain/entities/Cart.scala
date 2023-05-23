@@ -9,6 +9,7 @@ object Cart {
   private type Context = Option[Map[String, String]]
 
   sealed trait State extends CborSerializable {
+    def tags: Set[String]
   }
 
   final case class OpenCart(
@@ -39,6 +40,8 @@ object Cart {
 
     def toSummary: Summary =
       Summary(customerId, regionId, salesChannelId, countryCode, lineItems, context, checkoutDate)
+
+    override def tags: Set[String] = Set(salesChannelId)
   }
 
   final case class CheckedOutCart(
@@ -52,5 +55,7 @@ object Cart {
 
     def toSummary: Summary =
       Summary(customerId, regionId, salesChannelId, countryCode, lineItems, context, Some(checkoutDate))
+
+    override def tags: Set[String] = Set(salesChannelId)
   }
 }
