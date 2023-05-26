@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.rune.harmonia.cart.proto";
+
+package domainevents;
+
+message CartEvent {
+  string cartId = 1;
+  oneof action {
+    CartCreated cartCreated = 2;
+    ItemAdded itemAdded = 3;
+    ItemUpdated itemUpdated = 4;
+    ItemRemoved itemRemoved = 5;
+    CheckedOut checkedOut = 6;
+  }
+
+}
+
+message CartCreated {
+  string customerId = 2;
+  string regionId = 3;
+  string salesChannelId = 4;
+  string countryCode = 5;
+  map<string ,int32> items = 6;
+  optional ItemMetadataPayload itemMetadata = 7;
+  optional ContextPayload context = 8;
+}
+
+message ItemAdded {
+  string cartId = 1;
+  string variantId = 2;
+  int32 quantity = 3;
+  optional ItemMetadata itemMetadata = 4;
+}
+
+message ItemUpdated {
+  string cartId = 1;
+  string variantId = 2;
+  int32 quantity = 3;
+  optional ItemMetadata itemMetadata = 4;
+}
+
+message ItemRemoved {
+  string cartId = 1;
+  string variantId = 2;
+}
+
+message CheckedOut {
+  string cartId = 1;
+  int64 checkOutTimestamp = 2;
+}
+
+message ContextPayload {
+  map<string, string> context = 1;
+}
+
+message ItemMetadataPayload {
+  map<string, ItemMetadata> itemsMetadata = 1;
+}
+
+message ItemMetadata {
+  map<string, string> metadata = 1;
+}
+
+message LineItem {
+  int32 quantity = 1;
+  optional ItemMetadata metadata = 2;
+}
