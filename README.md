@@ -12,7 +12,8 @@ TBD
 Project based on [GM Direct Parts](https://www.gmpartsdirect.com/) vehicle part list page.
 
 Proposed Technologies (Solution #1)
-- [Nuxt](https://nuxt.com/) for the frontend application
+- [Vue.js](https://vuejs.org/) for frontend application (create-vue)
+  - [Nuxt](https://nuxt.com/) for the frontend application (This will happen once Testing capaibilites are stable: https://nuxt.com/docs/getting-started/testing)
 - [Primevue](https://primevue.org/) for frontend components
 - [FastAPI](https://fastapi.tiangolo.com/) for backend application
 - [Redis](https://redis.io/docs/stack/) for database
