@@ -6,6 +6,7 @@ This project is based on the [Implementing Microservices with Akka](Implementing
 - Upgraded library dependencies and plugins to the latest versions
 - Uses Red Panda instead of Apache Kafka for message broker
 - Defines a separate database schema for Akka Persistence tables
+- Leverages TestContainers for integration test alongside a custom NodeFixture test package for Akka Cluster testing
 - Project structure inspired by Clean Architecture pattern
 
 ## Running Integration Tests
@@ -64,7 +65,7 @@ sbt exchange/publishLocal
 
 
 
-## TODO Items
-1. Create Akka Projection for cart service to produce multi-event topic to Redpanda
-2. Create ZIO App based on Medusa.js checkout processing using zio-temporal & Temporal
-3. Create Region aggregate service modeled around Medusa.js region implementation
+## Milestones
+- [x] Create Akka Projection for cart service to produce multi-event topic to Redpanda 
+- [ ] Create Region aggregate service modeled around Medusa.js region implementation
+- [ ] Create ZIO App based on Medusa.js checkout process using zio-temporal
