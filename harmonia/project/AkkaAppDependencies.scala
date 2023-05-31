@@ -77,6 +77,7 @@ object AkkaAppDependencies {
           // Querying and publishing data from Akka Persistence
           "com.typesafe.akka" %% "akka-persistence-query" % AkkaVersion,
           "com.lightbend.akka" %% "akka-projection-r2dbc" % AkkaProjectionVersion,
+          "com.lightbend.akka" %% "akka-projection-kafka" % AkkaProjectionVersion,
           //"com.lightbend.akka" %% "akka-projection-grpc" % AkkaProjectionVersion,
           "com.lightbend.akka" %% "akka-projection-eventsourced" % AkkaProjectionVersion,
           "com.lightbend.akka" %% "akka-projection-testkit" % AkkaProjectionVersion % "test,it")

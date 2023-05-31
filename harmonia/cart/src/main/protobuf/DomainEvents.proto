@@ -28,27 +28,23 @@ message CartCreated {
 }
 
 message ItemAdded {
-  string cartId = 1;
   string variantId = 2;
-  int32 quantity = 3;
-  optional ItemMetadata itemMetadata = 4;
+  int32 quantity = 4;
+  optional ItemMetadata itemMetadata = 5;
 }
 
 message ItemUpdated {
-  string cartId = 1;
-  string variantId = 2;
-  int32 quantity = 3;
-  optional ItemMetadata itemMetadata = 4;
+  string variantId = 1;
+  int32 quantity = 2;
+  optional ItemMetadata itemMetadata = 3;
 }
 
 message ItemRemoved {
-  string cartId = 1;
-  string variantId = 2;
+  string variantId = 1;
 }
 
 message CheckedOut {
-  string cartId = 1;
-  int64 checkOutTimestamp = 2;
+  int64 checkOutTimestamp = 1;
 }
 
 message ContextPayload {
