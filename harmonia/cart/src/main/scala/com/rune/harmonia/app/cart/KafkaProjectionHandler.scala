@@ -3,7 +3,7 @@ package com.rune.harmonia.app.cart
 import akka.Done
 import akka.actor.typed.ActorSystem
 import akka.kafka.scaladsl.SendProducer
-import akka.projection.eventsourced.EventEnvelope
+import akka.persistence.query.typed.EventEnvelope
 import akka.projection.scaladsl.Handler
 import com.rune.harmonia.cart.proto._
 import org.apache.kafka.clients.producer.ProducerRecord

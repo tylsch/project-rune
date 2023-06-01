@@ -46,6 +46,7 @@ object AkkaAppDependencies {
           .get("config.resource")
           .fold(Seq.empty[String])(res => Seq(s"-Dconfig.resource=$res")),
         Global / cancelable := false,
+        resolvers += "Confluent Maven Repository" at "https://packages.confluent.io/maven/",
         libraryDependencies ++= Seq(
           "com.rune.harmonia" %% "harmonia-exchange" % "0.1.0-SNAPSHOT" % "protobuf-src",
           // 1. Basic dependencies for a clustered application
@@ -79,6 +80,9 @@ object AkkaAppDependencies {
           "com.lightbend.akka" %% "akka-projection-r2dbc" % AkkaProjectionVersion,
           "com.lightbend.akka" %% "akka-projection-kafka" % AkkaProjectionVersion,
           //"com.lightbend.akka" %% "akka-projection-grpc" % AkkaProjectionVersion,
+          // Confluent Serializers
+          "io.confluent" % "kafka-protobuf-serializer" % "7.2.2",
+          "io.confluent" % "kafka-protobuf-provider" % "7.3.0",
           "com.lightbend.akka" %% "akka-projection-eventsourced" % AkkaProjectionVersion,
           "com.lightbend.akka" %% "akka-projection-testkit" % AkkaProjectionVersion % "test,it")
       )

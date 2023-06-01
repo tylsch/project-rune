@@ -71,6 +71,7 @@ class IntegrationSpec
 
     "take cart through lifecycle" in {
       withNodes { (nodeFixtures, _) =>
+        // TODO: Add Projection Tests with Red Panda container
         val testNode1 = nodeFixtures.head
         val testNode2 = nodeFixtures.tail.head
         val eventualCart = testNode1.client.createCart(
