@@ -66,6 +66,7 @@ sbt exchange/publishLocal
 
 
 ## Milestones
-- [x] Create Akka Projection for cart service to produce multi-event topic to Redpanda 
+- [x] Create Akka Projection for cart service to produce multi-event topic to Redpanda
+- [ ] Migrate away from IntegrationTest configuration (see https://eed3si9n.com/sbt-1.9.0)
 - [ ] Create Region aggregate service modeled around Medusa.js region implementation
 - [ ] Create ZIO App based on Medusa.js checkout process using zio-temporal
