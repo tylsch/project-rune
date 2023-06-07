@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 
-// TODO: Implement R2DBC projection handler to Kafka
 class KafkaProjectionHandler(system: ActorSystem[_], topic: String, producer: SendProducer[String, CartEvent])
   extends Handler[EventEnvelope[Events.Event]] {
 

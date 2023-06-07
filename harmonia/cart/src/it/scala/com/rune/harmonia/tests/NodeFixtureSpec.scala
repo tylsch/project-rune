@@ -13,7 +13,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.matchers.should._
-import org.scalatest.time.Span
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.slf4j.{Logger, LoggerFactory}
 import org.testcontainers.containers.wait.strategy.Wait
@@ -29,6 +28,12 @@ import scala.sys.process._;
 * Link to IntegrationSpec since they have deleted this file
 * https://github.com/akka/akka-projection/blob/6288ce6be10d8f23bb6546898687d91b7372336d/samples/grpc/shopping-cart-service-scala/src/test/scala/shopping/cart/IntegrationSpec.scala
 * */
+
+// TODO: Refactor TestNodeFixture & NodeFixture class to leverage Multiple Containers (Postgres & Redpanda) https://github.com/testcontainers/testcontainers-scala/blob/master/docs/src/main/tut/usage.md#multiple-containers.
+/*
+* DockerComposeContainer does not support multiple ports in single docker file which Redpanda needs to expose broker and schema registry URL
+* */
+// TODO: Replace TestContainersScala Redpanda with customer version, theirs does not support getSchemaRegistryAddress() at this moment
 class TestNodeFixture(
                        grpcPort: Int,
                        managementPorts: Seq[Int],
