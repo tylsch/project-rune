@@ -15,7 +15,8 @@ Project Dunan is a service catalog for vehicle owners to purchase parts.  This s
     - [Nuxt](https://nuxt.com/) for the frontend application (This will happen once Testing capaibilites are stable: https://nuxt.com/docs/getting-started/testing)
 - [Primevue](https://primevue.org/) for frontend components
 - [FastAPI](https://fastapi.tiangolo.com/) for backend application
-- [Redis](https://redis.io/docs/stack/) for database
+- [Qdrant](https://qdrant.tech/) for vector database (similarity search)
+- [Dgraph](https://dgraph.io/) for graph database (part explorer)
 
 #### Proposed Technologies (Solution #2)
 - [Laminar](https://laminar.dev/) for the frontend application
