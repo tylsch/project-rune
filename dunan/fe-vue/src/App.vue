@@ -35,7 +35,7 @@ const items = ref([
 <!--</template>-->
 
 <template>
-  <div class="card">
+  <div class="p-5 mb-3 border-round-lg surface-card">
     <TabMenu :model="items" />
     <RouterView />
   </div>
