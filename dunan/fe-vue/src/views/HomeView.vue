@@ -3,7 +3,7 @@ import TheWelcome from '../components/TheWelcome.vue'
 </script>
 
 <template>
-  <main>
-    <TheWelcome />
-  </main>
+  <div class="tabmenudemo-content">
+    <h5>Home Component Content</h5>
+  </div>
 </template>
