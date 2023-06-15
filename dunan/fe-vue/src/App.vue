@@ -1,6 +1,5 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
 
 import { ref } from "vue";
 const items = ref([
@@ -17,26 +16,20 @@ const items = ref([
 ]);
 </script>
 
-<!--<template>-->
-<!--  <header>-->
-<!--    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />-->
-
-<!--    <div class="wrapper">-->
-<!--      <HelloWorld msg="You did it!" />-->
-
-<!--      <nav>-->
-<!--        <RouterLink to="/">Home</RouterLink>-->
-<!--        <RouterLink to="/about">About</RouterLink>-->
-<!--      </nav>-->
-<!--    </div>-->
-<!--  </header>-->
-
-<!--  <RouterView />-->
-<!--</template>-->
-
 <template>
-  <div class="p-5 mb-3 border-round-lg surface-card">
-    <TabMenu :model="items" />
-    <RouterView />
+  <div class="card">
+    <Menubar :model="items">
+      <template #start>
+        <Image class="mr-2" src="src/assets/logo.svg" alt="Image" height="40" />
+      </template>
+      <template #end>
+        <InputText placeholder="Search" type="text" />
+      </template>
+    </Menubar>
+    <div class="flex flex-column flex-auto pt-1">
+      <div class="surface-section px-1 py-1 lg:py-2 lg:px-3 h-full border-3 border-round border-orange-300">
+        <RouterView />
+      </div>
+    </div>
   </div>
 </template>
