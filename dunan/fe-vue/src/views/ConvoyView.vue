@@ -4,7 +4,6 @@
 
 <template>
   <div>
-    <h5>Convoy Component Content</h5>
     <RouterView />
   </div>
 </template>
