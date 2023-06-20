@@ -23,10 +23,13 @@ Project Dunan is a service catalog for vehicle owners to purchase parts.  This s
 - [Laminar SAP UI5 Web Components](https://github.com/sherpal/LaminarSAPUI5Bindings) for frontend components
 - Cats Effect
     - [http4s](https://http4s.org/) for backend web server
-    - [doobie](https://tpolecat.github.io/doobie/index.html) JDBC Layer
+    - [Qdrant](https://qdrant.tech/) for vector database (similarity search)
+      - Use HTTP interface
+    - [Dgraph](https://dgraph.io/) for graph database (part explorer)
+      - Create Resource Monad for Java Client
 - ZIO
     - [ZIO HTTP](https://zio.dev/zio-http/) or [ZIO gRPC](https://zio.dev/ecosystem/community/zio-grpc) for backend web server
-    - [ZIO JDBC](https://zio.dev/zio-jdbc/) JDBC Layer
-- Database
-    - Postgres with [pgvector extensions](https://github.com/pgvector/pgvector) - Database
-    - [Supabase](https://supabase.com/) with pgvector extension - Database (Use Supabase REST API or GraphQL endpoint instead of JDBC)
+    - [Qdrant](https://qdrant.tech/) for vector database (similarity search)
+      - Use HTTP interface
+    - [Dgraph](https://dgraph.io/) for graph database (part explorer)
+      - Use resource management for Java Client
