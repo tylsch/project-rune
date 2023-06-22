@@ -32,7 +32,7 @@ const items = ref([
 </script>
 
 <template>
-  <div class="card">
+  <div>
     <Menubar :model="items">
       <template #start>
         <Image class="mr-2" src="/src/assets/logo.svg" alt="Image" height="40" />
@@ -43,13 +43,13 @@ const items = ref([
       </template>
     </Menubar>
     <div class="flex flex-column flex-auto pt-1">
-      <div class="surface-section px-1 py-1 lg:py-2 lg:px-3 h-full border-round-md">
+      <div class="surface-overlay px-1 py-1 lg:py-2 lg:px-3 h-full">
         <RouterView />
       </div>
     </div>
     <!-- TODO: Refactor to a Footer Component -->
     <div class="flex flex-column flex-auto pt-1">
-      <div class="surface-section pt-1 px-1 py-1 lg:py-2 lg:px-3 h-full border-round-md">
+      <div class="surface-overlay pt-1 px-1 py-1 lg:py-2 lg:px-3 h-full">
         <div class="flex flex-column sm:flex-row sm:align-items-center justify-content-between">
           <div>
             <Image class="mr-2" src="/src/assets/logo.svg" alt="Image" height="40" />
