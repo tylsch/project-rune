@@ -1,4 +1,7 @@
 <script setup>
+import { ref } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+const selectedMenuItem = ref('surface-200');
 
 </script>
 
@@ -12,11 +15,11 @@
     </div>
   </div>
   <Divider />
-  <!-- TODO: Integrate into router for navigation-->
+  <!-- TODO: Integrate into router for navigation, migrate to separate component or leverage Menu component with template-->
   <div class="p-fluid flex flex-column lg:flex-row pb-2">
     <ul class="list-none m-0 p-0 flex flex-row lg:flex-column justify-content-between lg:justify-content-start mb-5 lg:mb-0">
       <li>
-        <a class="p-ripple lg:w-15rem flex align-items-center cursor-pointer p-3 border-round hover:surface-200 transition-duration-150 transition-colors">
+        <a :class="[selectedMenuItem]" class="p-ripple lg:w-15rem flex align-items-center cursor-pointer p-3 border-round hover:surface-200 transition-duration-150 transition-colors">
           <i class="pi pi-info-circle md:mr-2 text-600"></i>
           <span class="font-medium hidden md:block text-700">Specs</span>
           <span class="p-ink" role="presentation" aria-hidden="true" style="height: 240px; width: 240px; top: -74px; left: -47px;"></span>
