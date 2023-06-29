@@ -101,6 +101,8 @@ import TreeTable from 'primevue/treetable';
 import TriStateCheckbox from 'primevue/tristatecheckbox';
 import VirtualScroller from 'primevue/virtualscroller';
 
+import DunanMenu from '@/components/menus/DunanMenu.vue'
+
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
@@ -211,5 +213,7 @@ app.component('TreeSelect', TreeSelect);
 app.component('TreeTable', TreeTable);
 app.component('TriStateCheckbox', TriStateCheckbox);
 app.component('VirtualScroller', VirtualScroller);
+
+app.component('DunanMenu', DunanMenu)
 
 app.mount('#app');
