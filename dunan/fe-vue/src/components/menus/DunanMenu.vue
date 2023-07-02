@@ -50,7 +50,6 @@ const props = defineProps({
           :tabindex='props.tabindex'
           :aria-label='props["aria-label"]'
           :aria-labelledby='props["aria-labelledby"]'
-          data-test="menu"
     />
   </div>
 </template>
