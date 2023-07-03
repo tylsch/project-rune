@@ -41,6 +41,7 @@ const props = defineProps({
 
 <template>
   <div>
+    <!-- 7/3/23: PrimeVue Menu component doesn't yet support any programmatic way to set active selection for MenuItem -->
     <Menu :popup="props.popup"
           :model="props.model"
           :append-to='props.appendTo'
