@@ -6,6 +6,7 @@ import SpecificationView from '@/views/asset/SpecificationView.vue'
 import GalleryView from '@/views/asset/GalleryView.vue'
 import PartExplorerView from '@/views/asset/PartExplorerView.vue'
 import PartSearchView from '@/views/asset/PartSearchView.vue'
+import CategoryView from '@/views/asset/explorer/CategoryView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -53,7 +54,19 @@ const router = createRouter({
             {
               path: 'explorer',
               name: 'asset-part-explorer',
-              component: PartExplorerView
+              component: PartExplorerView,
+              children: [
+                {
+                  path: '',
+                  name: 'asset-part-explorer-root-category',
+                  component: CategoryView
+                },
+                {
+                  path: ':categoryName',
+                  name: 'asset-part-explorer-spec-category',
+                  component: CategoryView
+                }
+              ]
             },
             {
               path: 'search',
