@@ -1,5 +1,6 @@
 <script setup>
-import { ref } from 'vue';
+import { ref } from 'vue'
+
 const layout = ref('grid')
 const categories = ref([
   {
@@ -23,7 +24,6 @@ const categories = ref([
     stub: 'body'
   }
 ])
-
 </script>
 
 <template>
@@ -33,9 +33,11 @@ const categories = ref([
       <span class="text-900">Welcome to Part Explorer!</span>
     </div>
     <div class="text-700 mb-6">Start your exploration by selecting a category</div>
+    <!-- TODO: create prop for categories -->
     <DataView :value="categories" :layout="layout">
       <template #grid="slotProps">
-        <div class="col-12 md:col-4 mb-4 px-5">
+        <div class="col-12 md:col-3 mb-4 px-5">
+          <!-- TODO: Emit event to parent component of selection -->
           <Button class="p-3 shadow-2 mb-3 inline-block surface-card" style="border-radius: 10px" text raised aria-label="Filter">
             <i class="pi pi-truck text-4xl text-blue-500"></i>
           </Button>
@@ -47,9 +49,6 @@ const categories = ref([
   </div>
 </template>
 
-<style lang='scss' scoped>
-@import 'primeflex/primeflex.scss';
-:deep(.p-button) {
-  width: unset;
-}
+<style scoped>
+
 </style>
