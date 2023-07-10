@@ -42,7 +42,6 @@ const props = defineProps({
 <template>
   <div>
     <!-- 7/3/23: PrimeVue Menu component doesn't yet support any programmatic way to set active selection for MenuItem -->
-    <!-- TODO: Refactor using menu pass through to style components: See https://www.youtube.com/watch?v=JpYIX3V96gs for example -->
     <Menu :popup="props.popup"
           :model="props.model"
           :append-to='props.appendTo'
@@ -52,24 +51,16 @@ const props = defineProps({
           :tabindex='props.tabindex'
           :aria-label='props["aria-label"]'
           :aria-labelledby='props["aria-labelledby"]'
+          :pt="{
+            root: { style: 'width: unset; border: unset; border-radius: unset' },
+            menu: { class: 'list-none m-0 p-0 flex flex-row lg:flex-column justify-content-between lg:justify-content-start mb-5 lg:mb-0' },
+            content: { class: 'border-round-lg' },
+            action: { class: 'p-ripple flex align-items-center lg:p-3' }
+          }"
     />
   </div>
 </template>
 
-<style lang='scss' scoped>
-@import 'primeflex/primeflex.scss';
-:deep(.p-menu) {
-  width: unset;
-  border: unset;
-  border-radius: unset;
-}
-:deep(.p-menu-list) {
-  @include styleclass('list-none m-0 p-0 flex flex-row lg:flex-column justify-content-between lg:justify-content-start mb-5 lg:mb-0')
-}
-:deep(.p-menuitem-content) {
-  @include styleclass('border-round-lg')
-}
-:deep(.p-menuitem-link) {
-  @include styleclass('p-ripple flex align-items-center lg:p-3')
-}
+<style scoped>
+
 </style>
