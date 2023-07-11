@@ -38,7 +38,7 @@ const categories = ref([
       <template #grid="slotProps">
         <div class="col-12 md:col-3 mb-4 px-5">
           <!-- TODO: Emit event to parent component of selection -->
-          <Button class="p-3 shadow-2 mb-3 inline-block surface-card" style="border-radius: 10px" text raised aria-label="Filter">
+          <Button class="p-3 shadow-2 mb-3 inline-block surface-card" style="width: unset; border-radius: 10px" text raised aria-label="Filter">
             <i class="pi pi-truck text-4xl text-blue-500"></i>
           </Button>
           <div class="text-900 text-xl mb-3 font-medium">{{ slotProps.data.name }}</div>

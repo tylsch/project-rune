@@ -32,18 +32,17 @@ const items = ref([
 
 <template>
   <div class="card flex">
-    <Breadcrumb :home="home" :model="items" />
+    <Breadcrumb
+      :home="home"
+      :model="items"
+      :pt="{
+        root: { style: 'border: unset; border-radius: unset;' }
+      }"
+    />
   </div>
   <Category />
 </template>
 
-<style lang='scss' scoped>
-@import 'primeflex/primeflex.scss';
-:deep(.p-button) {
-  width: unset;
-}
-:deep(.p-breadcrumb) {
-  border: unset;
-  border-radius: unset;
-}
+<style scoped>
+
 </style>
