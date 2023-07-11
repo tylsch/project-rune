@@ -1,0 +1,15 @@
+{
+  "containers": [
+    {
+      "tenantId": "TestOrg1",
+      "assetId": "Alpha",
+      "parentContainerId": "Root",
+      "id": "",
+      "name": "Air & Fuel Delivery",
+      "type": "Category",
+      "metadata": {
+        "key": "value"
+      }
+    }
+  ]
+}

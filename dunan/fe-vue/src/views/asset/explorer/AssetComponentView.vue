@@ -31,6 +31,7 @@ const items = ref([
 </script>
 
 <template>
+  <!-- TODO: Breadcrumb will only be displayed when on the root-level of the asset tree -->
   <div class="card flex">
     <Breadcrumb
       :home="home"
@@ -40,6 +41,7 @@ const items = ref([
       }"
     />
   </div>
+  <!-- TODO: Selection from Category, Assembly, or Product component will drive what next component is displayed -->
   <Category />
 </template>
 
