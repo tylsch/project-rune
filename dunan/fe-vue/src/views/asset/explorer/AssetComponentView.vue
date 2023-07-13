@@ -1,21 +1,44 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue'
 import { useRoute, onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router';
 import Category from '@/components/assets/Category.vue'
+import { useFetch } from '@vueuse/core'
 
 const route = useRoute()
-const componentData = ref(route.params.components)
+const componentRouteParams = ref(route.params.components)
 
+const isRootComponent = computed(() => {
+  if (typeof componentRouteParams.value !== 'undefined' ) {
+    return componentRouteParams.value.length < 0
+  }
+  else {
+    return true
+  }
+})
+
+const getComponentsUrl = computed(() => {
+  if (typeof componentRouteParams.value !== 'undefined' ) {
+    return '/src/data/asset-data.json'
+  }
+  else {
+    return '/src/data/asset-data.json'
+  }
+})
+
+// TODO: Implement loading component during isFetching
+// TODO: Implement error component for error
+const { isFetching, error, data } = useFetch(getComponentsUrl, { refetch: true }).get().json()
 onBeforeRouteLeave((to, from) => {
   //TBD
 })
 
 onBeforeRouteUpdate((to, from) => {
   if (to.params.components !== from.params.components) {
-    // Function will be responsible for updating breadcrumb ref on route changes
+    componentRouteParams.value = to.params.components
   }
 })
 
+// TODO: Work on breadcrumb navigation
 const home = ref({
   icon: 'pi pi-home',
   to: '/',
@@ -31,8 +54,7 @@ const items = ref([
 </script>
 
 <template>
-  <!-- TODO: Breadcrumb will only be displayed when on the root-level of the asset tree -->
-  <div class="card flex">
+  <div v-if="!isRootComponent" class="card flex">
     <Breadcrumb
       :home="home"
       :model="items"
@@ -42,7 +64,7 @@ const items = ref([
     />
   </div>
   <!-- TODO: Selection from Category, Assembly, or Product component will drive what next component is displayed -->
-  <Category />
+  <Category :is-root-category="isRootComponent" :categories="data" />
 </template>
 
 <style scoped>

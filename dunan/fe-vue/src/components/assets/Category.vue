@@ -1,40 +1,23 @@
 <script setup>
-import { ref } from 'vue'
-
-const layout = ref('grid')
-const categories = ref([
-  {
-    id: 1,
-    name: 'Air & Fuel Delivery',
-    stub: 'air-fuel-delivery'
+defineProps({
+  isRootCategory: {
+    type: Boolean,
+    default: false
   },
-  {
-    id: 2,
-    name: 'Automatic Transmission',
-    stub: 'automatic-transmission'
-  },
-  {
-    id: 3,
-    name: 'Belts & Cooling',
-    stub: 'belts-cooling'
-  },
-  {
-    id: 4,
-    name: 'Body',
-    stub: 'body'
-  }
-])
+  categories: Array
+})
+// TODO: Create tests for component
 </script>
 
 <template>
   <div class="surface-section text-center">
-    <!-- TODO: Only display Welcome message for "root" category of asset -->
-    <div class="mb-3 font-bold text-3xl">
-      <span class="text-900">Welcome to Part Explorer!</span>
+    <div v-if="isRootCategory">
+      <div class="mb-3 font-bold text-3xl">
+        <span class="text-900">Welcome to Part Explorer!</span>
+      </div>
+      <div class="text-700 mb-6">Start your journey by selecting a category</div>
     </div>
-    <div class="text-700 mb-6">Start your exploration by selecting a category</div>
-    <!-- TODO: create prop for categories -->
-    <DataView :value="categories" :layout="layout">
+    <DataView :value="categories" layout="grid">
       <template #grid="slotProps">
         <div class="col-12 md:col-3 mb-4 px-5">
           <!-- TODO: Emit event to parent component of selection -->

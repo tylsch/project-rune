@@ -1,15 +1,46 @@
-{
-  "containers": [
-    {
-      "tenantId": "TestOrg1",
-      "assetId": "Alpha",
-      "parentContainerId": "Root",
-      "id": "",
-      "name": "Air & Fuel Delivery",
-      "type": "Category",
-      "metadata": {
-        "key": "value"
-      }
+[
+  {
+    "tenantId": "TestOrg1",
+    "assetId": "Alpha",
+    "parentContainerId": "Root",
+    "id": "1",
+    "name": "Air & Fuel Delivery",
+    "type": "Category",
+    "metadata": {
+      "key": "value"
     }
-  ]
-}
+  },
+  {
+    "tenantId": "TestOrg1",
+    "assetId": "Alpha",
+    "parentContainerId": "Root",
+    "id": "2",
+    "name": "Automatic Transmission",
+    "type": "Category",
+    "metadata": {
+      "key": "value"
+    }
+  },
+  {
+    "tenantId": "TestOrg1",
+    "assetId": "Alpha",
+    "parentContainerId": "Root",
+    "id": "3",
+    "name": "Belts & Cooling",
+    "type": "Category",
+    "metadata": {
+      "key": "value"
+    }
+  },
+  {
+    "tenantId": "TestOrg1",
+    "assetId": "Alpha",
+    "parentContainerId": "Root",
+    "id": "4",
+    "name": "Body",
+    "type": "Category",
+    "metadata": {
+      "key": "value"
+    }
+  }
+]
