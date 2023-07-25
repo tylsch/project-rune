@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CategoryItemsProps } from './CategoryItems';
+import { type CategoryItemsProps } from './CategoryItems';
 
 defineProps<CategoryItemsProps>()
 
