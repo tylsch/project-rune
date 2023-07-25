@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterView } from 'vue-router'
 import Menubar from 'primevue/menubar';
-import Image from 'primevue/image';
 import InputText from 'primevue/inputtext';
 
 import { ref } from "vue";
