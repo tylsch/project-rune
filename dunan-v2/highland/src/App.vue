@@ -34,6 +34,7 @@ const items = ref([
 </script>
 
 <template>
+  <!-- TODO: Refactoring using TailWind UI components -->
   <div class="flex flex-col gap-2 p-2">
     <div class="basis-1/3 rounded-md shadow-lg">
       <!-- TODO: Style using Passthrough  -->
@@ -49,7 +50,6 @@ const items = ref([
     </div>
 
     <div class="basis-1/3 rounded-md shadow-lg border-solid border-2 border-red-600">
-      <!-- <h1>Router View Placeholder</h1> -->
       <RouterView />
     </div>
     <!-- TODO: Refactor to a Footer Component -->
