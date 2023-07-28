@@ -1,6 +1,8 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import GarageView from '../views/garage/GarageView.vue';
+import { createRouter, createWebHistory } from 'vue-router';
+import HomeView from '@/views/HomeView.vue';
+import GarageView from '@/views/garage/GarageView.vue';
+import GarageItemsView from '@/views/garage/GarageItemsView.vue';
+import ResourceView from '@/views/resource/ResourceView.vue'; 
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,8 +19,13 @@ const router = createRouter({
       children: [
         {
           path: '',
-          name: 'garage-view',
-          component: GarageView
+          name: 'garage-items-view',
+          component: GarageItemsView
+        },
+        {
+          path: ':id',
+          name: 'resource-view',
+          component: ResourceView
         }
       ]
     },
