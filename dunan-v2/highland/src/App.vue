@@ -11,9 +11,9 @@ const items = ref([
     to: '/'
   },
   {
-    label: 'Convoy',
+    label: 'My Garage',
     icon: 'pi pi-fw pi-car',
-    to: '/convoy'
+    to: '/garage'
   },
   {
     label: 'Find Vehicle',
