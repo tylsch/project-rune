@@ -34,28 +34,18 @@ const items = ref([
 </script>
 
 <template>
-  <!-- TODO: Refactoring using TailWind UI components -->
-  <div class="flex flex-col gap-2 p-2">
-    <div class="basis-1/3 rounded-md shadow-lg">
-      <!-- TODO: Style using Passthrough  -->
-      <Menubar :model="items">
-        <template #end>
-          <!-- TODO: Replace with something else       -->
-          <span class="p-input-icon-left">
-            <i class="pi pi-search" />
-            <InputText placeholder="Search" />
-          </span>
-        </template>
-      </Menubar>
-    </div>
-
-    <div class="basis-1/3 rounded-md shadow-lg border-solid border-2 border-red-600">
-      <RouterView />
-    </div>
-    <!-- TODO: Refactor to a Footer Component -->
-    <div class="basis-1/3 rounded-md shadow-lg border-solid border-2 border-red-600">
-      <h1>Footer Placeholder</h1>
-    </div>
+  <div class="min-h-full p-2">
+    <Menubar :model="items"></Menubar>
+    <main class="bg-cyan-400 shadow rounded-md mt-1.5">
+      <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 bg-red-500 rounded-md">
+        <h1 class="text-3xl font-bold tracking-tight text-white">Content</h1>
+      </div>
+    </main>
+    <footer class="bg-gray-900 shadow rounded-md mt-1.5">
+      <div class="max-w-7xl px-4 py-6 sm:px-6 lg:px-8 bg-red-500 rounded-md">
+        <h1 class="text-3xl font-bold tracking-tight text-white">Footer</h1>
+      </div>
+    </footer>
   </div>
 </template>
 
