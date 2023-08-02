@@ -1,4 +1,5 @@
 import './assets/main.css'
+// TODO: Replace with Tailwind Theme once available
 import 'primevue/resources/themes/lara-light-blue/theme.css'
 import 'primevue/resources/primevue.css'
 import 'primeicons/primeicons.css'

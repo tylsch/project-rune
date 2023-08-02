@@ -3,5 +3,5 @@
 </script>
 
 <template>
-  Home
+  <h1 class="text-3xl font-bold tracking-tight">Home Page</h1>
 </template>
