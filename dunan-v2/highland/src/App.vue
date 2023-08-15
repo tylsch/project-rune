@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
 import Menubar from 'primevue/menubar';
-import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 
 import { ref } from "vue";
@@ -41,7 +40,7 @@ const items = ref([
         <img class="h-8 w-8 mx-2" src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500" alt="Your Company">
       </template>
       <template #end>
-        <Button icon="pi pi-bell" text rounded aria-label="Notification" />
+        <InputText placeholder="Search" type="text" />
       </template>
     </Menubar>
     <main class="bg-white shadow rounded-md mt-1.5">

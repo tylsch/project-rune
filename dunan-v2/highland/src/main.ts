@@ -21,12 +21,12 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import PrimeVue from 'primevue/config'
-// import Tailwind from 'primevue/tailwind'
+import Tailwind from 'primevue/passthrough/tailwind'
 
 const app = createApp(App)
 
-// app.use(PrimeVue, { unstyled: true, pt: Tailwind });
-app.use(PrimeVue, { ripple: true });
+app.use(PrimeVue, { unstyled: true, pt: Tailwind });
+// app.use(PrimeVue, { ripple: true });
 // app.use(ConfirmationService);
 // app.use(ToastService);
 // app.use(DialogService);
