@@ -1,0 +1,1 @@
+{"version":"0.0.0","name":"highland","dependencies":{"@vueuse/core":{"version":"10.2.1"},"pinia":{"version":"2.1.4"},"primeflex":{"version":"3.3.1"},"primeicons":{"version":"6.0.1"},"primevue":{"version":"3.32.0"},"vue-router":{"version":"4.2.4"},"vue":{"version":"3.3.4"}}}
