@@ -9,6 +9,7 @@
   ],
   "exclude": [],
   "compilerOptions": {
-    "composite": true
+    "composite": true,
+    "types": ["cypress", "@testing-library/cypress"]
   }
 }
