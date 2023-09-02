@@ -1,4 +1,4 @@
-import AssemblyDisplay from "./AssemblyDisplay.vue";
+import AssemblyDisplay from "../catalog/assemblydisplay/AssemblyDisplay.vue"
 
 describe('AssemblyDisplay', () => {
     it('playground', () => {
