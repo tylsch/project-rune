@@ -1,0 +1,43 @@
+{
+    "version2": {
+      "description": "file system (tree structure), single table",
+      "structure": [
+        {
+          "tenantId": "",
+          "assetId": "",
+          "parentId": "",
+          "id": "",
+          "sequence": "Number - Clustering Key",
+          "description": "",
+          "type": "Directory"
+        },
+        {
+          "tenantId": "",
+          "assetId": "",
+          "parentId": "",
+          "id": "",
+          "sequence": "Number - Clustering Key",
+          "description": "",
+          "type": "Assembly",
+          "attributes": {
+            "quantity": 2,
+            "uom": "EA"
+          }
+        },
+        {
+          "tenantId": "",
+          "assetId": "",
+          "parentId": "",
+          "id": "",
+          "sequence": "Number - Clustering Key",
+          "description": "",
+          "type": "Part",
+          "attributes": {
+            "quantity": 2,
+            "uom": "EA"
+          }
+        }
+      ]
+    }
+  }
+  
