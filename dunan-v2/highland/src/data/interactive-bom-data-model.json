@@ -3,9 +3,9 @@
       "description": "file system (tree structure), single table",
       "structure": [
         {
-          "tenantId": "",
-          "assetId": "",
-          "parentId": "",
+          "tenantId": "PartitionKey",
+          "assetId": "PartitionKey",
+          "parentId": "PartitionKey",
           "id": "",
           "sequence": "Number - Clustering Key",
           "description": "",
