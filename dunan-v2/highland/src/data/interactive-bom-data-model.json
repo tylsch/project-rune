@@ -9,7 +9,8 @@
         "id": "",
         "sequence": "Number - Clustering Key",
         "description": "",
-        "type": "Directory"
+        "type": "Directory",
+        "hasChildren": true
       },
       {
         "tenantId": "",
@@ -19,6 +20,7 @@
         "sequence": "Number - Clustering Key",
         "description": "",
         "type": "Assembly",
+        "hasChildren": false,
         "attributes": {
           "quantity": 2,
           "uom": "EA"
@@ -32,6 +34,7 @@
         "sequence": "Number - Clustering Key",
         "description": "",
         "type": "Part",
+        "hasChildren": true,
         "attributes": {
           "quantity": 2,
           "uom": "EA"
